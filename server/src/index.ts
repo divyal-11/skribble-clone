@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { redis } from './lib/redis.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { ClientToServerEvents, ServerToClientEvents, SocketData } from './types/events.js';
@@ -45,6 +46,13 @@ io.on('connection',(socket)=>{
 
 const PORT = process.env.PORT || 4000;
 
-httpServer.listen(PORT,()=>{
+httpServer.listen(PORT,async()=>{
     console.log(`Server running on port: ${PORT}`)
+
+    try{
+        const pong = await redis.ping()
+        console.log(`Redis is ready and responding: ${pong}`)
+    }catch(err){
+        console.error('Failed to connect to redis')
+    }
 })
