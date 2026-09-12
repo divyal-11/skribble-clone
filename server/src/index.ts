@@ -4,7 +4,9 @@ import { Server } from 'socket.io';
 import { redis } from './lib/redis.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { ClientToServerEvents, ServerToClientEvents, SocketData } from './types/events.js';
+import {addPlayerToRoom,removePlayerFromRoom,generateRoomCode} from './lib/roomManager.js'
+import { ClientToServerEvents, ServerToClientEvents, SocketData, Player } from './types/events.js';
+
 
 dotenv.config();
 
@@ -31,17 +33,61 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/create-room',(_req,res)=>{
+    const roomId = generateRoomCode();
+    res.json({roomId})
+})
+
 io.on('connection',(socket)=>{
-    console.log(`Client connected:${socket.id}`)
+    const playerId = (socket.handshake.auth?.playerId as string) || socket.id;
+    socket.data.playerId = playerId;
 
-    socket.on('ping',()=>{
-        console.log(`ping received from ${socket.id}`)
-        socket.emit('pong');
+
+    console.log(`Connected: socket_id=${socket.id} | player_id=${playerId}`);
+    
+
+    socket.on('joinRoom',async({roomId,playerName})=>{
+        const cleanRoomId = roomId.trim().toUpperCase();
+        const cleanPlayerName = playerName.trim() || 'Anonymous';
+
+        const player:Player = {
+            id:playerId,
+            name:cleanPlayerName,
+            score:0,
+            hasGuessed:false,
+            connected:true,
+        }
+
+        const {room,players} = await addPlayerToRoom(cleanRoomId,player);
+
+        socket.join(cleanRoomId);
+        socket.data.roomId = cleanRoomId;
+
+        console.log(`👤 ${player.name} (${player.id}) joined room ${cleanRoomId}`);
+
+        socket.emit('joinedRoom', {
+            roomId: cleanRoomId,
+            players,
+            status: room.status,
+        });
+
+        socket.to(cleanRoomId).emit('playerJoined', { player });
     })
 
-    socket.on('disconnect',(reason)=>{
-        console.log(`Client disconneted:${socket.id},Reason: ${reason}`)
-    })
+      // 2. Handle Disconnect
+  socket.on('disconnect', async (reason) => {
+    const currentRoomId = socket.data.roomId;
+    console.log(`❌ Disconnected: socket=${socket.id} (Reason: ${reason})`);
+    if (currentRoomId) {
+      const { remainingPlayers, newHostId } = await removePlayerFromRoom(currentRoomId, playerId);
+      
+      // Notify remaining players in the room
+      socket.to(currentRoomId).emit('playerLeft', { playerId });
+      if (newHostId) {
+        console.log(`👑 New host for room ${currentRoomId}: ${newHostId}`);
+      }
+    }
+  });
 })
 
 const PORT = process.env.PORT || 4000;
