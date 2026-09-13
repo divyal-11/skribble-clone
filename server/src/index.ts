@@ -73,8 +73,21 @@ io.on('connection',(socket)=>{
 
         socket.to(cleanRoomId).emit('playerJoined', { player });
     })
+// 2. Handle Explicit Leave Room
+    socket.on('leaveRoom', async ({ roomId }) => {
+  const cleanRoomId = roomId.trim().toUpperCase();
+  console.log(`👋 ${playerId} explicitly left room ${cleanRoomId}`);
 
-      // 2. Handle Disconnect
+  await removePlayerFromRoom(cleanRoomId, playerId);
+  socket.leave(cleanRoomId);
+  socket.data.roomId = undefined;
+
+  // Broadcast to remaining players in that room
+  socket.to(cleanRoomId).emit('playerLeft', { playerId });
+});
+
+
+      // 3. Handle Disconnect
   socket.on('disconnect', async (reason) => {
     const currentRoomId = socket.data.roomId;
     console.log(`❌ Disconnected: socket=${socket.id} (Reason: ${reason})`);
