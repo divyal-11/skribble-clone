@@ -28,9 +28,9 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
-  joinedRoom: (payload: { roomId: string; players: Player[]; status: string }) => void;
+  joinedRoom: (payload: { roomId: string; players: Player[]; status: string; hostId: string }) => void;
   playerJoined: (payload: { player: Player }) => void;
-  playerLeft: (payload: { playerId: string }) => void;
+  playerLeft: (payload: { playerId: string; newHostId?: string }) => void;
   gameStarted: (payload: { turnOrder: string[]; totalRounds: number }) => void;
   chooseWord: (payload: { options: string[] }) => void;
   wordChosen: (payload: { maskedWord: string; drawerId: string; word?: string }) => void;
