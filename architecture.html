@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skribbl Clone - Architecture & Pipeline Flowchart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: #18181b;
+      --border: #27272a;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 0.6rem 1.2rem;
+      border-radius: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      border-color: #3f3f46;
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .diagram-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 2rem;
+      display: none;
+      overflow-x: auto;
+    }
+
+    .diagram-card.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .card-header {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+    }
+
+    .card-header h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fafafa;
+    }
+
+    .card-header p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      min-height: 300px;
+    }
+
+    footer {
+      text-align: center;
+      color: #71717a;
+      font-size: 0.8rem;
+      margin-top: 3rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">Architecture Dashboard</span>
+      <h1>Skribbl Clone System Visualizer</h1>
+      <p class="subtitle">Complete technical pipeline, WebSocket messaging topology, and Redis state model</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('flowchart')">1. System Architecture Flowchart</button>
+      <button class="tab-btn" onclick="switchTab('sequence')">2. Room Lifecycle Sequence</button>
+      <button class="tab-btn" onclick="switchTab('mindmap')">3. Complete System Mindmap</button>
+    </div>
+
+    <!-- Tab 1: Flowchart -->
+    <div id="tab-flowchart" class="diagram-card active">
+      <div class="card-header">
+        <h2>End-to-End System Architecture</h2>
+        <p>Visual map showing Client Components, WebSocket protocol layer, Server Gateway, and Redis Storage.</p>
+      </div>
+      <div class="mermaid">
+flowchart TD
+    subgraph Client["🖥️ CLIENT LAYER (Next.js :3000)"]
+        direction TB
+        Session["📦 sessionStorage<br/>Persistent Player UUID"]
+        SocketClient["🔌 socket.io-client<br/>Client Singleton"]
+        Page["📄 page.tsx<br/>State Orchestrator"]
+        
+        subgraph Components["Presenter Components"]
+            JoinCard["JoinRoomCard.tsx<br/>• Nickname Input<br/>• Create Room Button<br/>• Join 6-char Code"]
+            Lobby["RoomLobby.tsx<br/>• Click-to-Copy Room Code<br/>• Live Roster with 👑 Host Badge<br/>• Leave Room Action"]
+            ToastComp["Toast.tsx<br/>• Lucide SVG Icons<br/>• Auto-dismiss Toast"]
+        end
+
+        Session -->|"auth: { playerId }"| SocketClient
+        Page <-->|"Emit / Listen Events"| SocketClient
+        Page -->|"Props & Callbacks"| JoinCard
+        Page -->|"Props & Callbacks"| Lobby
+        Page -->|"Props & Callbacks"| ToastComp
+    end
+
+    subgraph Network["🌐 WEBSOCKET PROTOCOL (ws://localhost:4000)"]
+        C2S["Client to Server Events<br/>• joinRoom (roomId, playerName)<br/>• leaveRoom (roomId)<br/>• ping"]
+        S2C["Server to Client Events<br/>• joinedRoom (room, players)<br/>• playerJoined (player)<br/>• playerLeft (playerId, newHostId)<br/>• pong"]
+    end
+
+    subgraph Server["⚙️ SERVER GATEWAY (Node.js & Express :4000)"]
+        Gateway["⚡ index.ts (Event Gateway)<br/>• Auth Handshake Interceptor<br/>• Socket.IO Room Clustering<br/>• Broadcast Coordinator"]
+        Manager["🛠️ roomManager.ts (Data Access Layer)<br/>• generateRoomCode()<br/>• getRoom() & getRoomPlayers()<br/>• addPlayerToRoom()<br/>• removePlayerFromRoom() & Host Reassignment"]
+        RedisLib["🔌 lib/redis.ts<br/>• ioredis Client<br/>• Reconnect Resilience & Error Logger"]
+
+        Gateway <-->|"Method Calls"| Manager
+        Manager <-->|"CRUD Operations"| RedisLib
+    end
+
+    subgraph Storage["💾 EPHEMERAL STATE (Redis 7 :6379)"]
+        RoomMeta[("room:CODE (Hash)<br/>hostId, status, currentRound, totalRounds")]
+        RoomPlayers[("room:CODE:players (Hash)<br/>playerId ➔ JSON(Player)")]
+        TTL["⏳ 2-Hour Sliding TTL<br/>Auto-cleanup on Empty Room"]
+
+        RedisLib <--> RoomMeta
+        RedisLib <--> RoomPlayers
+        RoomMeta -.-> TTL
+        RoomPlayers -.-> TTL
+    end
+
+    SocketClient <==>|"Bi-directional WebSocket"| Gateway
+      </div>
+    </div>
+
+    <!-- Tab 2: Sequence -->
+    <div id="tab-sequence" class="diagram-card">
+      <div class="card-header">
+        <h2>Live Room Lifecycle Sequence (Host ➔ Join ➔ Leave)</h2>
+        <p>Step-by-step trace of WebSocket packet exchanges and Redis mutations between two browser tabs.</p>
+      </div>
+      <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Alice as 👩 Player A (Alice)
+    actor Bob as 👨 Player B (Bob)
+    participant Client as 🖥️ Next.js Client
+    participant Server as ⚙️ Socket.IO Server
+    participant Redis as 💾 Redis Database
+
+    Note over Alice, Redis: PHASE 1: Room Creation & Host Initialization
+    Alice->>Client: Enters "Alice", clicks "Create Room"
+    Client->>Server: emit("joinRoom", { roomId: "XK92DF", playerName: "Alice" })
+    Server->>Redis: HGETALL room:XK92DF (Check existence)
+    Redis-->>Server: null (New Room)
+    Server->>Redis: HSET room:XK92DF hostId "alice-uuid", status "LOBBY"
+    Server->>Redis: HSET room:XK92DF:players "alice-uuid" JSON({ isHost: true })
+    Server->>Redis: EXPIRE 7200 seconds
+    Server->>Server: socket.join("XK92DF")
+    Server-->>Alice: emit("joinedRoom", { room, players: [Alice] })
+    Note over Alice: Alice enters Lobby view as 👑 Host
+
+    Note over Bob, Redis: PHASE 2: Player B Joins the Live Room
+    Bob->>Client: Enters "Bob", inputs "XK92DF", clicks "Join"
+    Client->>Server: emit("joinRoom", { roomId: "XK92DF", playerName: "Bob" })
+    Server->>Redis: HGETALL room:XK92DF (Found! Host is Alice)
+    Server->>Redis: HSET room:XK92DF:players "bob-uuid" JSON({ isHost: false })
+    Server->>Server: socket.join("XK92DF")
+    Server-->>Bob: emit("joinedRoom", { room, players: [Alice, Bob] })
+    Server--)Alice: socket.to("XK92DF").emit("playerJoined", Bob)
+    Note over Alice, Bob: Both Alice and Bob now see each other live in the roster!
+
+    Note over Bob, Redis: PHASE 3: Player B Leaves Room
+    Bob->>Client: Clicks "Leave Room"
+    Client->>Server: emit("leaveRoom", { roomId: "XK92DF" })
+    Server->>Redis: HDEL room:XK92DF:players "bob-uuid"
+    Server->>Server: socket.leave("XK92DF")
+    Server--)Alice: socket.to("XK92DF").emit("playerLeft", { playerId: "bob-uuid" })
+    Note over Alice: Alice sees toast: "Bob left the room" and roster updates!
+      </div>
+    </div>
+
+    <!-- Tab 3: Mindmap -->
+    <div id="tab-mindmap" class="diagram-card">
+      <div class="card-header">
+        <h2>Complete System Mindmap</h2>
+        <p>Structural breakdown across Client, Network, Server, and Storage domains.</p>
+      </div>
+      <div class="mermaid">
+mindmap
+  root((Skribbl Clone System))
+    Frontend Architecture
+      Next.js App Router
+      Session Auth: sessionStorage UUID
+      State Orchestrator: page.tsx
+      Modular Components
+        JoinRoomCard: Code Input & Generator
+        RoomLobby: Live Roster & Host Badge
+        Toast: Lucide SVG Animated Feedback
+    WebSocket Transport
+      Socket.IO Protocol
+      Strongly Typed Event Contracts
+      Room Clustering: socket.join
+      Targeted Broadcasts: socket.to
+    Server Architecture
+      Event Gateway: index.ts
+      Data Access Layer: roomManager.ts
+      Automatic Host Reassignment
+      Safe Disconnect Handling
+    Ephemeral Persistence
+      Redis 7 In-Memory Cache
+      Hash Storage: room and players
+      Sliding Expiry: 2-Hour TTL
+      Zero Ghost Rooms: Immediate DEL on Empty
+      </div>
+    </div>
+
+    <footer>
+      Skribbl.io Clone &bull; Built with Next.js, Node.js, Socket.IO &amp; Redis
+    </footer>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#18181b',
+        primaryColor: '#6366f1',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#818cf8',
+        lineColor: '#a1a1aa',
+        secondaryColor: '#27272a',
+        tertiaryColor: '#1e1e24'
+      }
+    });
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.diagram-card').forEach(c => c.classList.remove('active'));
+
+      const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabName));
+      const targetCard = document.getElementById('tab-' + tabName);
+
+      if (targetBtn) targetBtn.classList.add('active');
+      if (targetCard) targetCard.classList.add('active');
+    }
+  </script>
+</body>
+</html>
