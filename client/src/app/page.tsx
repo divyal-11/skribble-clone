@@ -6,6 +6,7 @@ import { Player } from "@/types/events";
 import { Toast, NotificationData } from "@/components/Toast";
 import { JoinRoomCard } from "@/components/JoinRoomCard";
 import { RoomLobby } from "@/components/RoomLobby";
+import { WordSelectModal } from "@/components/WordSelectModal";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
@@ -14,6 +15,8 @@ export default function Home() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [hostId, setHostId] = useState<string | null>(null);
+  const [wordOptions, setWordOptions] = useState<string[]>([]);
+
   const [notification, setNotification] = useState<NotificationData | null>(
     null,
   );
@@ -66,6 +69,11 @@ export default function Home() {
       });
     }
 
+    function onChooseWord(data: { options: string[] }) {
+      setWordOptions(data.options);
+    }
+
+    socket.on("chooseWord", onChooseWord);
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("joinedRoom", onJoinedRoom);
@@ -73,6 +81,7 @@ export default function Home() {
     socket.on("playerLeft", onPlayerLeft);
 
     return () => {
+      socket.off("chooseWord", onChooseWord);
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("joinedRoom", onJoinedRoom);
@@ -119,6 +128,12 @@ export default function Home() {
     socket.emit("startGame", { roomId: currentRoom });
   };
 
+  const handleSelectWord = (word: string) => {
+    if (!currentRoom) return;
+    socket.emit("wordSelect", { roomId: currentRoom, word });
+    setWordOptions([]); // Close the modal
+  };
+
   const myPlayerId = typeof window !== "undefined" ? getPlayerId() : "";
 
   return (
@@ -158,6 +173,12 @@ export default function Home() {
           hostId={hostId}
           onLeaveRoom={handleLeaveRoom}
           onStartGame={handleStartGame}
+        />
+      )}
+      {wordOptions.length > 0 && (
+        <WordSelectModal
+          words={wordOptions}
+          onSelectWord={handleSelectWord}
         />
       )}
     </main>

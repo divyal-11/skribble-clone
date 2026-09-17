@@ -157,4 +157,49 @@ export async function startGameInRoom(
   };
 }
 
+export function maskWord(word:string):string{
+  return word
+    .split('')
+    .map((char) => (char === ' ' ? '  ' : '_'))
+    .join(' ');
+}
+
+export async function selectWordInRoom(
+  roomId: string,
+  drawerId: string,
+  word: string
+): Promise<{
+  success: boolean;
+  error?: string;
+  word?: string;
+  maskedWord?: string;
+}> {
+  const room = await getRoom(roomId);
+  if (!room) {
+    return { success: false, error: "Room not found" };
+  }
+
+  // Verify that caller is the active drawer
+  if (room.currentDrawerId !== drawerId) {
+    return { success: false, error: "Only the active drawer can pick a word" };
+  }
+
+  const cleanWord = word.trim().toLowerCase();
+  const masked = maskWord(cleanWord);
+  const roomKey = `room:${roomId}`;
+
+  // Update room status to drawing and save the chosen word
+  await redis.hset(roomKey, {
+    status: "drawing",
+    currentWord: cleanWord,
+  });
+  await redis.expire(roomKey, ROOM_TTL);
+
+  return {
+    success: true,
+    word: cleanWord,
+    maskedWord: masked,
+  };
+}
+
 

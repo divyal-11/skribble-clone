@@ -7,7 +7,7 @@ export interface Player {
 }
 
 export interface DrawStroke {
-  type: 'start' | 'line' | 'clear';
+  type: "start" | "line" | "clear";
   x: number;
   y: number;
   prevX?: number;
@@ -28,17 +28,33 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
-  joinedRoom: (payload: { roomId: string; players: Player[]; status: string; hostId: string }) => void;
+  joinedRoom: (payload: {
+    roomId: string;
+    players: Player[];
+    status: string;
+    hostId: string;
+  }) => void;
   playerJoined: (payload: { player: Player }) => void;
   playerLeft: (payload: { playerId: string; newHostId?: string }) => void;
   gameStarted: (payload: { turnOrder: string[]; totalRounds: number }) => void;
   chooseWord: (payload: { options: string[] }) => void;
-  wordChosen: (payload: { maskedWord: string; drawerId: string; word?: string }) => void;
+  wordChosen: (payload: {
+    maskedWord: string;
+    drawerId: string;
+    word?: string;
+  }) => void;
   drawData: (payload: DrawStroke) => void;
   canvasSync: (payload: { strokes: DrawStroke[] }) => void;
-  guessResult: (payload: { playerId: string; correct: boolean; text?: string }) => void;
+  guessResult: (payload: {
+    playerId: string;
+    correct: boolean;
+    text?: string;
+  }) => void;
   scoreUpdate: (payload: { scores: Record<string, number> }) => void;
-  turnEnded: (payload: { word: string; scores: Record<string, number> }) => void;
+  turnEnded: (payload: {
+    word: string;
+    scores: Record<string, number>;
+  }) => void;
   gameEnded: (payload: { finalScores: Record<string, number> }) => void;
   pong: () => void;
 }
