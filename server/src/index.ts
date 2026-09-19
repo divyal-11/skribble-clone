@@ -12,6 +12,7 @@ import {
 } from "./types/events.js";
 import { registerRoomHandlers } from "./handlers/room/index.js";
 import { registerGameHandlers } from "./handlers/game/index.js";
+import { registerDrawHandlers } from "./handlers/draw/index.js";
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ io.on("connection", (socket) => {
   // Register domain handlers (clean, modular, zero-scroll)
   registerRoomHandlers(io, socket);
   registerGameHandlers(io, socket);
+  registerDrawHandlers(io, socket);
 });
 
 const PORT = process.env.PORT || 4000;

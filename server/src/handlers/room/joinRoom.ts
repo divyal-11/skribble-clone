@@ -6,6 +6,8 @@ import {
   Player,
 } from "../../types/events.js";
 import { addPlayerToRoom } from "../../services/playerService.js";
+import { getRoom } from "../../services/roomService.js";
+import { getRoomStrokes } from "../../services/strokeService.js";
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -42,6 +44,12 @@ export function handleJoinRoom(socket: AppSocket) {
       status: room.status,
       hostId: room.hostId,
     });
+
+    //replay existing strokes to the joining/reconnectnig player
+    const strokes = await getRoomStrokes(cleanRoomId);
+    if(strokes.length>0){
+      socket.emit("canvasSync",{strokes})
+    }
 
     socket.to(cleanRoomId).emit("playerJoined", { player });
   });
