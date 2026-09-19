@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Player } from '@/types/events';
-import { Users, Crown, Copy, Check, LogOut, Play } from 'lucide-react';
+import { useState } from "react";
+import { Player } from "@/types/events";
+import { Users, Crown, Copy, Check, LogOut, Play } from "lucide-react";
 
 interface RoomLobbyProps {
   roomId: string;
@@ -76,7 +76,7 @@ export function RoomLobby({
                   {index + 1}
                 </span>
                 <span className="font-medium text-zinc-200">
-                  {p.name}{' '}
+                  {p.name}{" "}
                   {p.id === myPlayerId && (
                     <span className="text-xs text-zinc-500">(You)</span>
                   )}
@@ -102,8 +102,8 @@ export function RoomLobby({
               disabled={!canStart}
               className={`w-full py-3 px-4 font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg ${
                 canStart
-                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20 active:scale-[0.99] cursor-pointer'
-                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
+                  ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20 active:scale-[0.99] cursor-pointer"
+                  : "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50"
               }`}
             >
               <Play className="w-4 h-4 fill-current" />

@@ -16,7 +16,6 @@ export function WordSelectModal({
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      // If timer runs out, auto-select a random word
       if (words.length > 0) {
         const randomIndex = Math.floor(Math.random() * words.length);
         onSelectWord(words[randomIndex]);
@@ -47,10 +46,11 @@ export function WordSelectModal({
           </div>
           {/* Countdown Badge */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800/80 border border-zinc-700/60 rounded-full text-xs font-mono font-semibold text-amber-400">
-            <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
+            <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "3s" }} />
             <span>{timeLeft}s</span>
           </div>
         </div>
+
         {/* Word Selection Options */}
         <div className="grid grid-cols-1 gap-3">
           {words.map((word) => (
@@ -66,6 +66,7 @@ export function WordSelectModal({
             </button>
           ))}
         </div>
+
         {/* Time Progress Bar */}
         <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
           <div

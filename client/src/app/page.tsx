@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { getPlayerId, socket } from "@/lib/socket";
 import { Player } from "@/types/events";
-import { Toast, NotificationData } from "@/components/Toast";
-import { JoinRoomCard } from "@/components/JoinRoomCard";
-import { RoomLobby } from "@/components/RoomLobby";
-import { WordSelectModal } from "@/components/WordSelectModal";
+import {
+  Toast,
+  NotificationData,
+  JoinRoomCard,
+  RoomLobby,
+  WordSelectModal,
+} from "@/components";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");

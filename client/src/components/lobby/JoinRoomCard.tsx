@@ -1,5 +1,5 @@
-import React from 'react';
-import { Palette, Plus, LogIn } from 'lucide-react';
+import React from "react";
+import { Palette, Plus, LogIn } from "lucide-react";
 
 interface JoinRoomCardProps {
   playerName: string;
