@@ -10,6 +10,7 @@ import {
   removePlayerFromRoom,
   generateRoomCode,
   startGameInRoom,
+  selectWordInRoom,
 } from "./lib/roomManager.js";
 import {
   ClientToServerEvents,
@@ -139,6 +140,38 @@ io.on("connection", (socket) => {
     }
   });
 
+  //handle word selection
+  socket.on("wordSelect", async ({ roomId, word }) => {
+    const cleanRoomId = roomId.trim().toUpperCase();
+    console.log(
+      `Word selected in room ${cleanRoomId}: "${word}" by ${playerId}`,
+    );
+
+    const result = await selectWordInRoom(cleanRoomId, playerId, word);
+
+    if (!result.success || !result.maskedWord || !result.word) {
+      console.warn(`⚠️ Word selection failed: ${result.error}`);
+      return;
+    }
+
+    //send to drawer (includes the actual word to draw)
+    socket.emit("wordChosen", {
+      word: result.word,
+      maskedWord: result.maskedWord,
+      drawerId: playerId,
+    });
+
+    //broadcast to other players only masked strinf secret word stays hidden
+    socket.to(cleanRoomId).emit("wordChosen", {
+      maskedWord: result.maskedWord,
+      drawerId: playerId,
+    });
+
+    console.log(
+      `📢 Broadcasted wordChosen (hint: "${result.maskedWord}") to room ${cleanRoomId}`,
+    );
+  });
+
   // 4. Handle Disconnect
   socket.on("disconnect", async (reason) => {
     const currentRoomId = socket.data.roomId;
@@ -156,8 +189,6 @@ io.on("connection", (socket) => {
       }
     }
   });
-
-  
 });
 
 const PORT = process.env.PORT || 4000;
