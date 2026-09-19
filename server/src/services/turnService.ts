@@ -1,16 +1,6 @@
 import { redis } from "../lib/redis.js";
-import { getRoom, getRoomPlayers, ROOM_TTL } from "./roomService.js";
-
-/**
- * Transforms a word into masked underscores: 'apple' -> '_ _ _ _ _'
- * Preserves spaces between multi-word phrases: 'ice cream' -> '_ _ _   _ _ _ _ _'
- */
-export function maskWord(word: string): string {
-  return word
-    .split("")
-    .map((char) => (char === " " ? "  " : "_"))
-    .join(" ");
-}
+import { getRoom, ROOM_TTL } from "./roomService.js";
+import { getRoomPlayers } from "./playerService.js";
 
 /**
  * Starts a game: validates host, shuffles turn order, and updates Redis
@@ -60,44 +50,5 @@ export async function startGameInRoom(
     turnOrder,
     currentDrawerId,
     totalRounds: room.totalRounds,
-  };
-}
-
-/**
- * Validates active drawer and transitions room to 'drawing'
- */
-export async function selectWordInRoom(
-  roomId: string,
-  drawerId: string,
-  word: string
-): Promise<{
-  success: boolean;
-  error?: string;
-  word?: string;
-  maskedWord?: string;
-}> {
-  const room = await getRoom(roomId);
-  if (!room) {
-    return { success: false, error: "Room not found" };
-  }
-
-  if (room.currentDrawerId !== drawerId) {
-    return { success: false, error: "Only the active drawer can pick a word" };
-  }
-
-  const cleanWord = word.trim().toLowerCase();
-  const masked = maskWord(cleanWord);
-  const roomKey = `room:${roomId}`;
-
-  await redis.hset(roomKey, {
-    status: "drawing",
-    currentWord: cleanWord,
-  });
-  await redis.expire(roomKey, ROOM_TTL);
-
-  return {
-    success: true,
-    word: cleanWord,
-    maskedWord: masked,
   };
 }

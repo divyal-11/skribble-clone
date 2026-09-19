@@ -10,8 +10,8 @@ import {
   ServerToClientEvents,
   SocketData,
 } from "./types/events.js";
-import { registerRoomHandlers } from "./handlers/roomHandler.js";
-import { registerGameHandlers } from "./handlers/gameHandler.js";
+import { registerRoomHandlers } from "./handlers/room/index.js";
+import { registerGameHandlers } from "./handlers/game/index.js";
 
 dotenv.config();
 

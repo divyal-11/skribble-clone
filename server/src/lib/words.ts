@@ -18,3 +18,14 @@ export function getRandomWords(count: number = 3): string[] {
   const shuffled = [...WORDS].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
+
+/**
+ * Transforms a word into masked underscores: 'apple' -> '_ _ _ _ _'
+ * Preserves spaces between multi-word phrases: 'ice cream' -> '_ _ _   _ _ _ _ _'
+ */
+export function maskWord(word: string): string {
+  return word
+    .split("")
+    .map((char) => (char === " " ? "  " : "_"))
+    .join(" ");
+}
