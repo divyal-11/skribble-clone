@@ -3,3 +3,5 @@ export * from "./lobby/RoomLobby";
 export * from "./modals/Toast";
 export * from "./modals/WordSelectModal";
 export * from "./common/ConnectionBadge";
+export * from "./canvas/Canvas";
+

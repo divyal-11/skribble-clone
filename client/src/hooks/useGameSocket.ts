@@ -12,6 +12,11 @@ export function useGameSocket() {
   const [hostId, setHostId] = useState<string | null>(null);
   const [wordOptions, setWordOptions] = useState<string[]>([]);
   const [notification, setNotification] = useState<NotificationData | null>(null);
+  const [roomStatus, setRoomStatus] = useState<string>("waiting");
+  const [currentDrawerId, setCurrentDrawerId] = useState<string | null>(null);
+  const [currentWord, setCurrentWord] = useState<string | undefined>(undefined);
+  const [maskedWord, setMaskedWord] = useState<string | undefined>(undefined);
+
 
   const showNotification = (message: string, type: "join" | "leave") => {
     setNotification({ message, type });
@@ -33,6 +38,7 @@ export function useGameSocket() {
       setCurrentRoom(data.roomId);
       setPlayers(data.players);
       setHostId(data.hostId);
+      setRoomStatus(data.status);
     };
 
     const onPlayerJoined = (data: { player: Player }) => {
@@ -60,12 +66,24 @@ export function useGameSocket() {
       setWordOptions(data.options);
     };
 
+    const onWordChosen = (data: {
+      drawerId: string;
+      word?: string;
+      maskedWord: string;
+    }) => {
+      setRoomStatus("drawing");
+      setCurrentDrawerId(data.drawerId);
+      setMaskedWord(data.maskedWord);
+      if (data.word) setCurrentWord(data.word);
+    };
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("joinedRoom", onJoinedRoom);
     socket.on("playerJoined", onPlayerJoined);
     socket.on("playerLeft", onPlayerLeft);
-    socket.on("chooseWord", onChooseWord);
+    socket.on("chooseWord", onChooseWord)
+    socket.on("wordChosen", onWordChosen);
 
     return () => {
       socket.off("connect", onConnect);
@@ -73,7 +91,8 @@ export function useGameSocket() {
       socket.off("joinedRoom", onJoinedRoom);
       socket.off("playerJoined", onPlayerJoined);
       socket.off("playerLeft", onPlayerLeft);
-      socket.off("chooseWord", onChooseWord);
+      socket.off("chooseWord", onChooseWord)
+      socket.off("wordChosen", onWordChosen);
     };
   }, []);
 
@@ -96,6 +115,10 @@ export function useGameSocket() {
       setCurrentRoom(null);
       setPlayers([]);
       setHostId(null);
+      setRoomStatus("waiting");
+      setCurrentDrawerId(null);
+      setCurrentWord(undefined);
+      setMaskedWord(undefined);
     }
   };
 
@@ -124,5 +147,9 @@ export function useGameSocket() {
     leaveRoom,
     startGame,
     selectWord,
+    roomStatus,
+    currentDrawerId,
+    currentWord,
+    maskedWord,
   };
 }

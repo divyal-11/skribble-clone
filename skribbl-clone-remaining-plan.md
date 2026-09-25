@@ -94,6 +94,8 @@ Falls out mostly for free once Phases 2 and 4 exist:
 ## Phase 6 — Round Timer
 - Server-authoritative countdown (not client-side) driving `turnEnded`
 - Either a `setInterval` tick broadcast or a single deadline timestamp the client counts down from locally
+- **Progressive Letter Hint Reveal**: At 50% and 75% elapsed turn time, server unmasks a random letter position in the blanks and broadcasts `hintRevealed` to guessers
+
 
 ---
 

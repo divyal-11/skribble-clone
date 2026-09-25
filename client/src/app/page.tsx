@@ -9,6 +9,7 @@ import {
   RoomLobby,
   WordSelectModal,
   ConnectionBadge,
+  Canvas,
 } from "@/components";
 
 export default function Home() {
@@ -27,6 +28,10 @@ export default function Home() {
     leaveRoom,
     startGame,
     selectWord,
+    roomStatus,
+    currentDrawerId,
+    currentWord,
+    maskedWord,
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -58,6 +63,14 @@ export default function Home() {
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           isConnected={isConnected}
+        />
+      ) : roomStatus === "drawing" ? (
+        <Canvas
+          roomId={currentRoom}
+          isDrawer={currentDrawerId === myPlayerId}
+          drawerName={players.find((p) => p.id === currentDrawerId)?.name}
+          word={currentWord}
+          maskedWord={maskedWord}
         />
       ) : (
         <RoomLobby
