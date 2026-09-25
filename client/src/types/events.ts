@@ -33,7 +33,11 @@ export interface ServerToClientEvents {
     players: Player[];
     status: string;
     hostId: string;
+    currentDrawerId?: string;
+    maskedWord?: string;
+    word?: string;
   }) => void;
+
   playerJoined: (payload: { player: Player }) => void;
   playerLeft: (payload: { playerId: string; newHostId?: string }) => void;
   gameStarted: (payload: { turnOrder: string[]; totalRounds: number }) => void;

@@ -8,6 +8,8 @@ import {
 import { addPlayerToRoom } from "../../services/playerService.js";
 import { getRoom } from "../../services/roomService.js";
 import { getRoomStrokes } from "../../services/strokeService.js";
+import { maskWord } from "../../lib/words.js";
+
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -38,12 +40,19 @@ export function handleJoinRoom(socket: AppSocket) {
 
     console.log(`👤 ${player.name} (${player.id}) joined room ${cleanRoomId}`);
 
+    const isDrawing = room.status === "drawing";
+    const masked = room.currentWord ? maskWord(room.currentWord) : undefined;
+    const isDrawer = room.currentDrawerId === playerId;
     socket.emit("joinedRoom", {
       roomId: cleanRoomId,
       players,
       status: room.status,
       hostId: room.hostId,
+      currentDrawerId: room.currentDrawerId,
+      maskedWord: masked,
+      word: isDrawer ? room.currentWord : undefined, // only send full word to drawer
     });
+
 
     //replay existing strokes to the joining/reconnectnig player
     const strokes = await getRoomStrokes(cleanRoomId);

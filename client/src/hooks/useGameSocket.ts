@@ -29,16 +29,22 @@ export function useGameSocket() {
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => setIsConnected(false);
 
-    const onJoinedRoom = (data: {
+        const onJoinedRoom = (data: {
       roomId: string;
       players: Player[];
       status: string;
       hostId: string;
+      currentDrawerId?: string;
+      maskedWord?: string;
+      word?: string;
     }) => {
       setCurrentRoom(data.roomId);
       setPlayers(data.players);
       setHostId(data.hostId);
       setRoomStatus(data.status);
+      if (data.currentDrawerId) setCurrentDrawerId(data.currentDrawerId);
+      if (data.maskedWord) setMaskedWord(data.maskedWord);
+      if (data.word) setCurrentWord(data.word);
     };
 
     const onPlayerJoined = (data: { player: Player }) => {
