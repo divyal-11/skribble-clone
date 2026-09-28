@@ -51,13 +51,25 @@ export interface ServerToClientEvents {
   }) => void;
   playerJoined: (payload: { player: Player }) => void;
   playerLeft: (payload: { playerId: string; newHostId?: string }) => void;
-  gameStarted: (payload: { turnOrder: string[]; totalRounds: number }) => void;
+  gameStarted: (payload: { turnOrder: string[]; totalRounds: number; currentDrawerId: string }) => void;
+  choosingWord: (payload: { drawerId: string; drawerName: string }) => void;
   chooseWord: (payload: { options: string[] }) => void;
-  wordChosen: (payload: { maskedWord: string; drawerId: string; word?: string }) => void;
+  wordChosen: (payload: {
+    maskedWord: string;
+    drawerId: string;
+    word?: string;
+    roundEndsAt: number;
+    duration: number;
+  }) => void;
   drawData: (payload: DrawStroke) => void;
   canvasSync: (payload: { strokes: DrawStroke[] }) => void;
   chatMessage: (payload: ChatMessagePayload) => void;
-  guessResult: (payload: { playerId: string; correct: boolean; text?: string }) => void;
+  guessResult: (payload: {
+    playerId: string;
+    correct: boolean;
+    text?: string;
+    word?: string;
+  }) => void;
   scoreUpdate: (payload: { scores: Record<string, number> }) => void;
   turnEnded: (payload: { word: string; scores: Record<string, number> }) => void;
   gameEnded: (payload: { finalScores: Record<string, number> }) => void;
