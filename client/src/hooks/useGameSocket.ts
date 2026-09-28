@@ -1,8 +1,8 @@
 "use client";
 
+import { Player, ChatMessagePayload} from "@/types/events";
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
-import { Player } from "@/types/events";
 import { NotificationData } from "@/components/modals/Toast";
 
 export function useGameSocket() {
@@ -16,6 +16,7 @@ export function useGameSocket() {
   const [currentDrawerId, setCurrentDrawerId] = useState<string | null>(null);
   const [currentWord, setCurrentWord] = useState<string | undefined>(undefined);
   const [maskedWord, setMaskedWord] = useState<string | undefined>(undefined);
+  const [messages, setMessages] = useState<ChatMessagePayload[]>([]);
 
 
   const showNotification = (message: string, type: "join" | "leave") => {
@@ -83,6 +84,22 @@ export function useGameSocket() {
       if (data.word) setCurrentWord(data.word);
     };
 
+        const onChatMessage = (msg: ChatMessagePayload) => {
+      setMessages((prev) => [...prev, msg]);
+    };
+
+    const onScoreUpdate = ({ scores }: { scores: Record<string, number> }) => {
+      setPlayers((prev) =>
+        prev.map((p) => ({
+          ...p,
+          score: scores[p.id] !== undefined ? scores[p.id] : p.score,
+        }))
+      );
+    };
+
+
+
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("joinedRoom", onJoinedRoom);
@@ -90,6 +107,8 @@ export function useGameSocket() {
     socket.on("playerLeft", onPlayerLeft);
     socket.on("chooseWord", onChooseWord)
     socket.on("wordChosen", onWordChosen);
+    socket.on("chatMessage", onChatMessage);
+    socket.on("scoreUpdate", onScoreUpdate);
 
     return () => {
       socket.off("connect", onConnect);
@@ -99,6 +118,9 @@ export function useGameSocket() {
       socket.off("playerLeft", onPlayerLeft);
       socket.off("chooseWord", onChooseWord)
       socket.off("wordChosen", onWordChosen);
+      socket.off("chatMessage", onChatMessage);
+      socket.off("scoreUpdate", onScoreUpdate);
+
     };
   }, []);
 
@@ -125,6 +147,13 @@ export function useGameSocket() {
       setCurrentDrawerId(null);
       setCurrentWord(undefined);
       setMaskedWord(undefined);
+      setMessages([]);
+    }
+  };
+
+  const sendGuess = (text: string) => {
+    if (currentRoom) {
+      socket.emit("guess", { roomId: currentRoom, text });
     }
   };
 
@@ -157,5 +186,7 @@ export function useGameSocket() {
     currentDrawerId,
     currentWord,
     maskedWord,
+    messages,
+    sendGuess,
   };
 }

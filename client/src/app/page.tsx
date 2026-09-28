@@ -10,6 +10,7 @@ import {
   WordSelectModal,
   ConnectionBadge,
   Canvas,
+  ChatBox,
 } from "@/components";
 
 export default function Home() {
@@ -32,6 +33,8 @@ export default function Home() {
     currentDrawerId,
     currentWord,
     maskedWord,
+    messages,
+    sendGuess,
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -65,14 +68,27 @@ export default function Home() {
           isConnected={isConnected}
         />
       ) : roomStatus === "drawing" ? (
-        <Canvas
-          roomId={currentRoom}
-          isDrawer={currentDrawerId === myPlayerId}
-          drawerName={players.find((p) => p.id === currentDrawerId)?.name}
-          word={currentWord}
-          maskedWord={maskedWord}
-        />
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3">
+            <Canvas
+              roomId={currentRoom}
+              isDrawer={currentDrawerId === myPlayerId}
+              drawerName={players.find((p) => p.id === currentDrawerId)?.name}
+              word={currentWord}
+              maskedWord={maskedWord}
+            />
+          </div>
+          <div className="lg:col-span-1 h-full min-h-[450px]">
+            <ChatBox
+              messages={messages}
+              onSendMessage={sendGuess}
+              isDrawer={currentDrawerId === myPlayerId}
+              hasGuessed={players.find((p) => p.id === myPlayerId)?.hasGuessed || false}
+            />
+          </div>
+        </div>
       ) : (
+
         <RoomLobby
           roomId={currentRoom}
           players={players}
