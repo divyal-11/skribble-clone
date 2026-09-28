@@ -4,4 +4,5 @@ export * from "./modals/Toast";
 export * from "./modals/WordSelectModal";
 export * from "./common/ConnectionBadge";
 export * from "./canvas/Canvas";
+export * from "./chat/ChatBox";
 
