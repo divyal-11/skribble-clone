@@ -17,6 +17,14 @@ export interface DrawStroke {
   size?: number;
 }
 
+export interface ChatMessagePayload {
+  senderId: string;
+  senderName: string;
+  text: string;
+  type: "chat" | "correct" | "close" | "system";
+}
+
+
 // Client -> Server events
 export interface ClientToServerEvents {
   joinRoom: (payload: { roomId: string; playerName: string }) => void;
@@ -48,6 +56,7 @@ export interface ServerToClientEvents {
   wordChosen: (payload: { maskedWord: string; drawerId: string; word?: string }) => void;
   drawData: (payload: DrawStroke) => void;
   canvasSync: (payload: { strokes: DrawStroke[] }) => void;
+  chatMessage: (payload: ChatMessagePayload) => void;
   guessResult: (payload: { playerId: string; correct: boolean; text?: string }) => void;
   scoreUpdate: (payload: { scores: Record<string, number> }) => void;
   turnEnded: (payload: { word: string; scores: Record<string, number> }) => void;
