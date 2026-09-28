@@ -13,6 +13,7 @@ import {
 import { registerRoomHandlers } from "./handlers/room/index.js";
 import { registerGameHandlers } from "./handlers/game/index.js";
 import { registerDrawHandlers } from "./handlers/draw/index.js";
+import { registerChatHandlers } from "./handlers/chat/index.js";
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ io.on("connection", (socket) => {
   registerRoomHandlers(io, socket);
   registerGameHandlers(io, socket);
   registerDrawHandlers(io, socket);
+  registerChatHandlers(io, socket);
 });
 
 const PORT = process.env.PORT || 4000;
