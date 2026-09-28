@@ -31,10 +31,12 @@ export default function Home() {
     selectWord,
     roomStatus,
     currentDrawerId,
+    choosingDrawerName,
     currentWord,
     maskedWord,
     messages,
     sendGuess,
+    timeLeft,
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -50,6 +52,8 @@ export default function Home() {
   };
 
   const myPlayerId = typeof window !== "undefined" ? getPlayerId() : "";
+  const isDrawer = currentDrawerId === myPlayerId;
+  const isGameActive = roomStatus !== "waiting";
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-zinc-950 text-white font-sans">
@@ -67,28 +71,35 @@ export default function Home() {
           onJoinRoom={handleJoinRoom}
           isConnected={isConnected}
         />
-      ) : roomStatus === "drawing" ? (
+      ) : isGameActive ? (
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-4">
           <div className="lg:col-span-3">
             <Canvas
               roomId={currentRoom}
-              isDrawer={currentDrawerId === myPlayerId}
+              isDrawer={isDrawer}
               drawerName={players.find((p) => p.id === currentDrawerId)?.name}
               word={currentWord}
               maskedWord={maskedWord}
+              timeLeft={timeLeft}
+              isChoosing={roomStatus === "choosing"}
+              choosingDrawerName={
+                choosingDrawerName ||
+                players.find((p) => p.id === currentDrawerId)?.name
+              }
             />
           </div>
           <div className="lg:col-span-1 h-full min-h-[450px]">
             <ChatBox
               messages={messages}
               onSendMessage={sendGuess}
-              isDrawer={currentDrawerId === myPlayerId}
-              hasGuessed={players.find((p) => p.id === myPlayerId)?.hasGuessed || false}
+              isDrawer={isDrawer}
+              hasGuessed={
+                players.find((p) => p.id === myPlayerId)?.hasGuessed || false
+              }
             />
           </div>
         </div>
       ) : (
-
         <RoomLobby
           roomId={currentRoom}
           players={players}
@@ -99,7 +110,7 @@ export default function Home() {
         />
       )}
 
-      {wordOptions.length > 0 && (
+      {wordOptions.length > 0 && isDrawer && (
         <WordSelectModal
           words={wordOptions}
           onSelectWord={selectWord}

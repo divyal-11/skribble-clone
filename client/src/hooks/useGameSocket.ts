@@ -1,6 +1,6 @@
 "use client";
 
-import { Player, ChatMessagePayload} from "@/types/events";
+import { Player, ChatMessagePayload } from "@/types/events";
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
 import { NotificationData } from "@/components/modals/Toast";
@@ -14,15 +14,32 @@ export function useGameSocket() {
   const [notification, setNotification] = useState<NotificationData | null>(null);
   const [roomStatus, setRoomStatus] = useState<string>("waiting");
   const [currentDrawerId, setCurrentDrawerId] = useState<string | null>(null);
+  const [choosingDrawerName, setChoosingDrawerName] = useState<string | null>(null);
   const [currentWord, setCurrentWord] = useState<string | undefined>(undefined);
   const [maskedWord, setMaskedWord] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessagePayload[]>([]);
-
+  const [roundEndsAt, setRoundEndsAt] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(60);
 
   const showNotification = (message: string, type: "join" | "leave") => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3500);
   };
+
+  // Synchronized countdown timer
+  useEffect(() => {
+    if (!roundEndsAt) {
+      setTimeLeft(60);
+      return;
+    }
+    const updateTime = () => {
+      const remaining = Math.max(0, Math.ceil((roundEndsAt - Date.now()) / 1000));
+      setTimeLeft(remaining);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 500);
+    return () => clearInterval(interval);
+  }, [roundEndsAt]);
 
   useEffect(() => {
     socket.connect();
@@ -30,7 +47,7 @@ export function useGameSocket() {
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => setIsConnected(false);
 
-        const onJoinedRoom = (data: {
+    const onJoinedRoom = (data: {
       roomId: string;
       players: Player[];
       status: string;
@@ -69,6 +86,24 @@ export function useGameSocket() {
       });
     };
 
+    const onGameStarted = (data: {
+      turnOrder: string[];
+      totalRounds: number;
+      currentDrawerId: string;
+    }) => {
+      setRoomStatus("choosing");
+      setCurrentDrawerId(data.currentDrawerId);
+    };
+
+    const onChoosingWord = (data: { drawerId: string; drawerName: string }) => {
+      setRoomStatus("choosing");
+      setCurrentDrawerId(data.drawerId);
+      setChoosingDrawerName(data.drawerName);
+      setRoundEndsAt(null);
+      setWordOptions([]);
+      setCurrentWord(undefined);
+    };
+
     const onChooseWord = (data: { options: string[] }) => {
       setWordOptions(data.options);
     };
@@ -77,14 +112,29 @@ export function useGameSocket() {
       drawerId: string;
       word?: string;
       maskedWord: string;
+      roundEndsAt: number;
+      duration: number;
     }) => {
       setRoomStatus("drawing");
       setCurrentDrawerId(data.drawerId);
       setMaskedWord(data.maskedWord);
-      if (data.word) setCurrentWord(data.word);
+      setRoundEndsAt(data.roundEndsAt);
+      setChoosingDrawerName(null);
+      setWordOptions([]);
+      setCurrentWord(data.word);
     };
 
-        const onChatMessage = (msg: ChatMessagePayload) => {
+    const onGuessResult = (data: {
+      playerId: string;
+      correct: boolean;
+      word?: string;
+    }) => {
+      if (data.correct && data.word) {
+        setCurrentWord(data.word);
+      }
+    };
+
+    const onChatMessage = (msg: ChatMessagePayload) => {
       setMessages((prev) => [...prev, msg]);
     };
 
@@ -97,16 +147,16 @@ export function useGameSocket() {
       );
     };
 
-
-
-
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("joinedRoom", onJoinedRoom);
     socket.on("playerJoined", onPlayerJoined);
     socket.on("playerLeft", onPlayerLeft);
-    socket.on("chooseWord", onChooseWord)
+    socket.on("gameStarted", onGameStarted);
+    socket.on("choosingWord", onChoosingWord);
+    socket.on("chooseWord", onChooseWord);
     socket.on("wordChosen", onWordChosen);
+    socket.on("guessResult", onGuessResult);
     socket.on("chatMessage", onChatMessage);
     socket.on("scoreUpdate", onScoreUpdate);
 
@@ -116,11 +166,13 @@ export function useGameSocket() {
       socket.off("joinedRoom", onJoinedRoom);
       socket.off("playerJoined", onPlayerJoined);
       socket.off("playerLeft", onPlayerLeft);
-      socket.off("chooseWord", onChooseWord)
+      socket.off("gameStarted", onGameStarted);
+      socket.off("choosingWord", onChoosingWord);
+      socket.off("chooseWord", onChooseWord);
       socket.off("wordChosen", onWordChosen);
+      socket.off("guessResult", onGuessResult);
       socket.off("chatMessage", onChatMessage);
       socket.off("scoreUpdate", onScoreUpdate);
-
     };
   }, []);
 
@@ -145,9 +197,12 @@ export function useGameSocket() {
       setHostId(null);
       setRoomStatus("waiting");
       setCurrentDrawerId(null);
+      setChoosingDrawerName(null);
       setCurrentWord(undefined);
       setMaskedWord(undefined);
       setMessages([]);
+      setRoundEndsAt(null);
+      setTimeLeft(60);
     }
   };
 
@@ -184,9 +239,11 @@ export function useGameSocket() {
     selectWord,
     roomStatus,
     currentDrawerId,
+    choosingDrawerName,
     currentWord,
     maskedWord,
     messages,
     sendGuess,
+    timeLeft,
   };
 }
