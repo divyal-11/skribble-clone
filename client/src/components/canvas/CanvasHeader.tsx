@@ -35,10 +35,14 @@ export function CanvasHeader({
       {/* Secret Word or Masked Blanks */}
       <div className="text-center">
         <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-0.5">
-          {isDrawer ? "Word to Draw" : "Guess the Word"}
+          {isDrawer ? "Word to Draw" : word ? "You Guessed It!" : "Guess the Word"}
         </p>
-        <p className="text-xl font-mono font-black tracking-widest text-indigo-400">
-          {isDrawer ? (word || "...") : (maskedWord || "_ _ _ _")}
+        <p
+          className={`text-xl font-mono font-black tracking-widest ${
+            word && !isDrawer ? "text-emerald-400" : "text-indigo-400"
+          }`}
+        >
+          {word ? word.toUpperCase() : maskedWord || "_ _ _ _"}
         </p>
       </div>
 

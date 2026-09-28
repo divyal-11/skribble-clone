@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { CanvasHeader } from "./CanvasHeader";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { useCanvasDrawing } from "./useCanvasDrawing";
+import { WordChoosingBanner } from "../game/WordChoosingBanner";
 
 interface CanvasProps {
   roomId: string;
@@ -10,6 +11,8 @@ interface CanvasProps {
   word?: string;
   maskedWord?: string;
   timeLeft?: number;
+  isChoosing?: boolean;
+  choosingDrawerName?: string;
 }
 
 export function Canvas({
@@ -19,6 +22,8 @@ export function Canvas({
   word,
   maskedWord,
   timeLeft,
+  isChoosing,
+  choosingDrawerName,
 }: CanvasProps) {
   const [color, setColor] = useState("#ffffff");
   const [size, setSize] = useState(4);
@@ -40,6 +45,9 @@ export function Canvas({
 
       {/* 2. Responsive Canvas Board */}
       <div className="relative w-full aspect-[16/10] bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+        {isChoosing && !isDrawer && choosingDrawerName && (
+          <WordChoosingBanner drawerName={choosingDrawerName} />
+        )}
         <canvas
           ref={canvasRef}
           width={800}
