@@ -66,3 +66,28 @@ export async function removePlayerFromRoom(
 
   return { remainingPlayers, newHostId };
 }
+
+//update redis and build the latest scoreboard for all players
+export async function updatePlayerScore(
+  roomId: string,
+  playerId: string,
+  addedScore: number
+): Promise<{ players: Player[]; updatedScores: Record<string, number> }> {
+  const playersKey = `room:${roomId}:players`;
+  const playerRaw = await redis.hget(playersKey, playerId);
+  if (playerRaw) {
+    const player = JSON.parse(playerRaw) as Player;
+    player.score += addedScore;
+    player.hasGuessed = true;
+    await redis.hset(playersKey, playerId, JSON.stringify(player));
+  }
+
+  const players = await getRoomPlayers(roomId);
+  const updatedScores: Record<string, number> = {};
+  players.forEach((p) => {
+    updatedScores[p.id] = p.score;
+  });
+
+  return { players, updatedScores };
+}
+
