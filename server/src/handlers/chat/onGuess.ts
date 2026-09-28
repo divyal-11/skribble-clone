@@ -47,14 +47,20 @@ export function handleGuess(io:AppServer,socket:AppSocket){
         const score = calculateGuessScore(45);
         const {updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
 
+        //privately send the secret word to the correct guesser to fill their masked blanks
+        socket.emit("guessResult", {
+          playerId,
+          correct: true,
+          word: room.currentWord,
+        });
+
         //announce to room without revealing the secret word
         io.to(cleanRoomId).emit("chatMessage",{
             senderId: playerId,
             senderName: currentPlayer.name,
             text: `${currentPlayer.name} guessed the word!`,
             type: "correct",
-
-        })
+        });
 
         //broadcast updated scoreboard
         io.to(cleanRoomId).emit("scoreUpdate",{scores:updatedScores});

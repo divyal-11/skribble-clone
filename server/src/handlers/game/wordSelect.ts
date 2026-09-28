@@ -26,21 +26,28 @@ export function handleWordSelect(socket: AppSocket) {
       return;
     }
 
+    const duration = 60;
+    const roundEndsAt = Date.now() + duration * 1000;
+
     // Send full word to drawer
     socket.emit("wordChosen", {
       word: result.word,
       maskedWord: result.maskedWord,
       drawerId: playerId,
+      roundEndsAt,
+      duration,
     });
 
     // Broadcast masked word only to guessers
     socket.to(cleanRoomId).emit("wordChosen", {
       maskedWord: result.maskedWord,
       drawerId: playerId,
+      roundEndsAt,
+      duration,
     });
 
     console.log(
-      `📢 Broadcasted wordChosen (hint: "${result.maskedWord}") to room ${cleanRoomId}`
+      `📢 Broadcasted wordChosen (hint: "${result.maskedWord}", duration: ${duration}s) to room ${cleanRoomId}`
     );
   });
 }

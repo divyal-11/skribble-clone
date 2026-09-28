@@ -5,6 +5,7 @@ import {
   SocketData,
 } from "../../types/events.js";
 import { startGameInRoom } from "../../services/turnService.js";
+import { getRoomPlayers } from "../../services/playerService.js";
 import { getRandomWords } from "../../lib/words.js";
 
 type AppServer = Server<
@@ -33,20 +34,25 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
       return;
     }
 
-    console.log(
-      `🚀 Game started in room ${cleanRoomId}! First drawer: ${result.currentDrawerId}`
-    );
+    const players = await getRoomPlayers(cleanRoomId);
+    const drawer = players.find((p) => p.id === result.currentDrawerId);
 
-    // Broadcast to room
+    // Broadcast game start to room
     io.to(cleanRoomId).emit("gameStarted", {
       turnOrder: result.turnOrder,
       totalRounds: result.totalRounds || 3,
+      currentDrawerId: result.currentDrawerId,
     });
 
-    // 3 random words
-    const wordOptions = getRandomWords(3);
+    if (drawer) {
+      io.to(cleanRoomId).emit("choosingWord", {
+        drawerId: drawer.id,
+        drawerName: drawer.name,
+      });
+    }
 
-    // Privately emit to drawer only
+    // 3 random words sent privately to drawer
+    const wordOptions = getRandomWords(3);
     const roomSockets = await io.in(cleanRoomId).fetchSockets();
     const drawerSocket = roomSockets.find(
       (s) => s.data.playerId === result.currentDrawerId
@@ -54,9 +60,6 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
 
     if (drawerSocket) {
       drawerSocket.emit("chooseWord", { options: wordOptions });
-      console.log(
-        `📝 Sent 3 word options privately to drawer ${result.currentDrawerId}`
-      );
     }
   });
 }
