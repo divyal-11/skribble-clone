@@ -22,5 +22,5 @@ type AppSocket = Socket<
 
 export function registerGameHandlers(io: AppServer, socket: AppSocket) {
   handleStartGame(io, socket);
-  handleWordSelect(socket);
+  handleWordSelect(io, socket);
 }

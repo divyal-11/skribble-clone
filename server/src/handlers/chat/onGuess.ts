@@ -7,6 +7,7 @@ import {
 import { getRoom } from "../../services/roomService.js";
 import { getRoomPlayers, updatePlayerScore } from "../../services/playerService.js";
 import { isCloseGuess, calculateGuessScore } from "../../services/chatService.js";
+import { getRemainingTime, triggerTurnEndEarly } from "../../services/timeServices.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -44,8 +45,9 @@ export function handleGuess(io:AppServer,socket:AppSocket){
 
     if(isCorrect){
         //calc points and update redis
-        const score = calculateGuessScore(45);
-        const {updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
+        const remainingSeconds = getRemainingTime(cleanRoomId);
+        const score = calculateGuessScore(remainingSeconds);
+        const {players:updatedPlayers,updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
 
         //privately send the secret word to the correct guesser to fill their masked blanks
         socket.emit("guessResult", {
@@ -61,11 +63,19 @@ export function handleGuess(io:AppServer,socket:AppSocket){
             text: `${currentPlayer.name} guessed the word!`,
             type: "correct",
         });
-
+        
         //broadcast updated scoreboard
         io.to(cleanRoomId).emit("scoreUpdate",{scores:updatedScores});
+
+        //if all non drawer have gusssed , end the turn early
+        const guessers = updatedPlayers.filter((p)=>p.id !== room.currentDrawerId);
+        const allGuessed = guessers.length > 0 && guessers.every((p)=> p.hasGuessed);
+
+        if(allGuessed){
+            await triggerTurnEndEarly(io,cleanRoomId);
+        }
     }else {
-        //check if close tupo and privately notify guesser
+        //check if close typo and privately notify guesser
         if (isCloseGuess(cleanText, room.currentWord)) {
         socket.emit("chatMessage", {
           senderId: "system",

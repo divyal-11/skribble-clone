@@ -1,10 +1,11 @@
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import {
   ClientToServerEvents,
   ServerToClientEvents,
   SocketData,
 } from "../../types/events.js";
 import { selectWordInRoom } from "../../services/wordService.js";
+import { startTurnTimer } from "../../services/timeServices.js";
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -13,7 +14,14 @@ type AppSocket = Socket<
   SocketData
 >;
 
-export function handleWordSelect(socket: AppSocket) {
+type AppServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  Record<string, never>,
+  SocketData
+>;
+
+export function handleWordSelect(io: AppServer, socket: AppSocket) {
   const playerId = socket.data.playerId;
 
   socket.on("wordSelect", async ({ roomId, word }) => {
@@ -45,6 +53,8 @@ export function handleWordSelect(socket: AppSocket) {
       roundEndsAt,
       duration,
     });
+
+    startTurnTimer(io, cleanRoomId, duration);
 
     console.log(
       `📢 Broadcasted wordChosen (hint: "${result.maskedWord}", duration: ${duration}s) to room ${cleanRoomId}`
