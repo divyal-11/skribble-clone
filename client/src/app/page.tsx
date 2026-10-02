@@ -38,6 +38,7 @@ export default function Home() {
     messages,
     sendGuess,
     timeLeft,
+    revealedWord
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -91,6 +92,8 @@ export default function Home() {
                 choosingDrawerName ||
                 players.find((p) => p.id === currentDrawerId)?.name
               }
+              isRoundEnd={roomStatus === "roundEnd"}
+              revealedWord={revealedWord || undefined}
             />
           </div>
           <div className="lg:col-span-1 h-full min-h-[450px]">

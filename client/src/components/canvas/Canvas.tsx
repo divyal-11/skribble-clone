@@ -3,6 +3,7 @@ import { CanvasHeader } from "./CanvasHeader";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { useCanvasDrawing } from "./useCanvasDrawing";
 import { WordChoosingBanner } from "../game/WordChoosingBanner";
+import { TurnEndBanner } from "../game/TurnEndBanner";
 
 interface CanvasProps {
   roomId: string;
@@ -13,6 +14,8 @@ interface CanvasProps {
   timeLeft?: number;
   isChoosing?: boolean;
   choosingDrawerName?: string;
+  isRoundEnd?: boolean;
+  revealedWord?: string;
 }
 
 export function Canvas({
@@ -24,6 +27,8 @@ export function Canvas({
   timeLeft,
   isChoosing,
   choosingDrawerName,
+  isRoundEnd,
+  revealedWord,
 }: CanvasProps) {
   const [color, setColor] = useState("#ffffff");
   const [size, setSize] = useState(4);
@@ -47,6 +52,10 @@ export function Canvas({
       <div className="relative w-full aspect-[16/10] bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
         {isChoosing && !isDrawer && choosingDrawerName && (
           <WordChoosingBanner drawerName={choosingDrawerName} />
+        )}
+
+        {isRoundEnd && revealedWord && (
+          <TurnEndBanner word={revealedWord} />
         )}
         <canvas
           ref={canvasRef}
