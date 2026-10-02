@@ -5,7 +5,7 @@ interface ChatMessageListProps {
   messages: ChatMessagePayload[];
 }
 
-export function ChatMessageList({ messages }: ChatMessageListProps) {
+export function ChatMessageList({ messages =[] }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new message
@@ -18,19 +18,21 @@ export function ChatMessageList({ messages }: ChatMessageListProps) {
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto p-4 space-y-2.5 font-sans text-xs scrollbar-thin scrollbar-thumb-zinc-700"
+      className="flex-1 overflow-y-auto font-sans text-xs scrollbar-thin select-text bg-white"
     >
       {messages.length === 0 ? (
-        <div className="text-zinc-600 text-center py-8 italic">
+        <div className="text-zinc-400 text-center py-8 italic text-xs">
           No guesses yet. Be the first to guess!
         </div>
       ) : (
         messages.map((msg, index) => {
+          const isEven = index % 2 === 1;
+
           if (msg.type === "correct") {
             return (
               <div
                 key={index}
-                className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1.5 rounded-lg text-center"
+                className="bg-[#e7ffdf] text-[#22c55e] font-extrabold px-3 py-1 text-center"
               >
                 {msg.text}
               </div>
@@ -41,7 +43,7 @@ export function ChatMessageList({ messages }: ChatMessageListProps) {
             return (
               <div
                 key={index}
-                className="bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold px-3 py-1.5 rounded-lg text-center"
+                className="bg-amber-100 text-amber-700 font-bold px-3 py-1 text-center"
               >
                 {msg.text}
               </div>
@@ -49,9 +51,14 @@ export function ChatMessageList({ messages }: ChatMessageListProps) {
           }
 
           return (
-            <div key={index} className="flex gap-1.5 text-zinc-300">
-              <span className="font-bold text-zinc-400">{msg.senderName}:</span>
-              <span className="break-all">{msg.text}</span>
+            <div
+              key={index}
+              className={`flex items-baseline gap-1.5 px-3 py-1 ${
+                isEven ? "bg-[#f5f5f5]" : "bg-white"
+              }`}
+            >
+              <span className="font-extrabold text-zinc-900">{msg.senderName}:</span>
+              <span className="break-all font-semibold text-zinc-800">{msg.text}</span>
             </div>
           );
         })

@@ -24,8 +24,8 @@ export function ChatInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-3 border-t border-zinc-800 bg-zinc-900/60">
-      <div className="flex items-center gap-2">
+    <form onSubmit={handleSubmit} className="p-2 border-t border-zinc-200 bg-white">
+      <div className="flex items-center gap-1.5">
         <input
           type="text"
           value={text}
@@ -36,14 +36,14 @@ export function ChatInput({
               ? (disabledPlaceholder || "You cannot guess right now")
               : "Type your guess here..."
           }
-          maxLength={50}
-          className="flex-1 px-3.5 py-2 bg-zinc-950 border border-zinc-700/80 rounded-xl text-white placeholder-zinc-500 text-xs focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          maxLength={100}
+          className="flex-1 px-3 py-1.5 bg-white border border-zinc-300 rounded text-zinc-900 placeholder:text-zinc-400 text-xs sm:text-sm font-semibold outline-none focus:border-[#56b2fd] disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <button
           type="submit"
           disabled={disabled || !text.trim()}
-          className="p-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white rounded-xl transition flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-          title="Send Guess"
+          className="px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white rounded font-bold text-xs transition cursor-pointer disabled:cursor-not-allowed"
+          title="Send"
         >
           <Send className="w-3.5 h-3.5" />
         </button>

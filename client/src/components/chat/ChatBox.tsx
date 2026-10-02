@@ -14,7 +14,7 @@ export function ChatBox({
   messages,
   onSendMessage,
   isDrawer,
-  hasGuessed,
+  hasGuessed = false,
 }: ChatBoxProps) {
   const disabled = isDrawer || hasGuessed;
   const disabledPlaceholder = isDrawer
@@ -24,21 +24,11 @@ export function ChatBox({
     : undefined;
 
   return (
-    <div className="flex flex-col h-full min-h-[400px] bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-      {/* 1. Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
-        <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-          <MessageSquare className="w-4 h-4" />
-        </div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-          Chat & Guesses
-        </h3>
-      </div>
-
-      {/* 2. Message List */}
+    <div className="flex flex-col h-full bg-white rounded shadow-md overflow-hidden border border-zinc-300">
+      {/* Message List */}
       <ChatMessageList messages={messages} />
 
-      {/* 3. Input Form */}
+      {/* Input Form */}
       <ChatInput
         onSendMessage={onSendMessage}
         disabled={disabled}

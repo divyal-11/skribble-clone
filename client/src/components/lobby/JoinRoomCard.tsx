@@ -1,8 +1,6 @@
-import React from "react";
-import { Palette } from "lucide-react";
-import { NicknameInput } from "./NicknameInput";
-import { CreateRoomButton } from "./CreateRoomButton";
-import { JoinRoomForm } from "./JoinRoomForm";
+import React, { useState } from "react";
+import { Shuffle, ArrowLeft, ArrowRight, Play, LogIn } from "lucide-react";
+import { Avatar } from "../common/Avatar";
 
 interface JoinRoomCardProps {
   playerName: string;
@@ -23,37 +21,111 @@ export function JoinRoomCard({
   onJoinRoom,
   isConnected,
 }: JoinRoomCardProps) {
+  const [avatarIndex, setAvatarIndex] = useState(0);
+  const sampleSeeds = ["doodler", "sparky", "blaze", "pixel", "cosmo", "boba", "momo", "waffles"];
+  const currentSeed = playerName.trim() || sampleSeeds[avatarIndex % sampleSeeds.length];
+
+  const handleRandomize = () => {
+    setAvatarIndex((prev) => prev + 1);
+  };
+
   return (
-    <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
-      <h1 className="text-3xl font-extrabold text-center mb-2 tracking-tight flex items-center justify-center gap-2">
-        <Palette className="w-8 h-8 text-indigo-500" />
-        <span>Skribbl Clone</span>
-      </h1>
+    <div className="w-full max-w-sm sm:max-w-md bg-[#0e2c84]/90 border-2 border-[#040a33] rounded-2xl p-6 sm:p-7 shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col gap-4 text-white backdrop-blur-sm select-none">
+      {/* 1. Name & Language Row */}
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          maxLength={18}
+          className="flex-1 px-3.5 py-2.5 bg-white text-zinc-900 placeholder:text-zinc-400 font-extrabold text-sm rounded-lg outline-none border border-zinc-400 focus:border-[#56b2fd] shadow-inner"
+        />
+        <select className="bg-white text-zinc-900 font-extrabold text-sm rounded-lg px-3 py-2.5 outline-none border border-zinc-400 cursor-pointer shadow-inner">
+          <option>English</option>
+          <option>German</option>
+          <option>French</option>
+          <option>Spanish</option>
+        </select>
+      </div>
 
-      <p className="text-zinc-400 text-center text-sm mb-6">
-        Enter your name to create or join a room
-      </p>
+      {/* 2. Interactive Avatar Customizer */}
+      <div className="relative flex items-center justify-center py-2 bg-[#091e5c]/80 rounded-xl border border-[#040a33]/60 shadow-inner">
+        {/* Left Arrow */}
+        <button
+          type="button"
+          onClick={() => setAvatarIndex((prev) => (prev > 0 ? prev - 1 : sampleSeeds.length - 1))}
+          className="p-2 hover:scale-125 transition-transform text-white/70 hover:text-white cursor-pointer"
+          title="Previous Avatar"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
 
-      <div className="space-y-4">
-        <NicknameInput value={playerName} onChange={setPlayerName} />
-
-        <CreateRoomButton onClick={onCreateRoom} disabled={!isConnected} />
-
-        <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-zinc-800" />
-          <span className="flex-shrink mx-4 text-xs font-mono text-zinc-500 uppercase">
-            Or join existing
-          </span>
-          <div className="flex-grow border-t border-zinc-800" />
+        {/* Live Bouncy Avatar */}
+        <div className="px-6 flex items-center justify-center hover:scale-110 transition-transform duration-150">
+          <Avatar seed={currentSeed} size={70} />
         </div>
 
-        <JoinRoomForm
-          roomInput={roomInput}
-          setRoomInput={setRoomInput}
-          onSubmit={onJoinRoom}
-          disabled={!isConnected}
-        />
+        {/* Right Arrow */}
+        <button
+          type="button"
+          onClick={() => setAvatarIndex((prev) => prev + 1)}
+          className="p-2 hover:scale-125 transition-transform text-white/70 hover:text-white cursor-pointer"
+          title="Next Avatar"
+        >
+          <ArrowRight className="w-5 h-5" />
+        </button>
+
+        {/* Randomize Dice Button */}
+        <button
+          type="button"
+          onClick={handleRandomize}
+          className="absolute right-3.5 p-1.5 bg-[#1b43aa] hover:bg-[#2556d6] rounded-lg text-amber-300 hover:scale-110 transition cursor-pointer shadow"
+          title="Randomize Avatar!"
+        >
+          <Shuffle className="w-4 h-4" />
+        </button>
       </div>
+
+      {/* 3. Big Green 3D Play Button */}
+      <button
+        type="button"
+        onClick={onCreateRoom}
+        disabled={!isConnected}
+        className="skribbl-btn-green w-full py-3.5 rounded-xl font-black text-xl uppercase tracking-wider text-black flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+      >
+        <Play className="w-5 h-5 fill-black" />
+        <span>Create Room</span>
+      </button>
+
+      {/* 4. Join Existing Room Divider */}
+      <div className="relative flex py-1 items-center">
+        <div className="flex-grow border-t border-white/20" />
+        <span className="flex-shrink mx-3 text-xs font-bold text-blue-200 uppercase tracking-widest">
+          Or Join with Code
+        </span>
+        <div className="flex-grow border-t border-white/20" />
+      </div>
+
+      {/* 5. Join Room Code Form */}
+      <form onSubmit={onJoinRoom} className="flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="ENTER ROOM CODE"
+          value={roomInput}
+          onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+          maxLength={6}
+          className="flex-1 px-3.5 py-2.5 bg-white text-zinc-900 placeholder:text-zinc-400 font-mono font-black text-sm uppercase text-center rounded-lg outline-none border border-zinc-400 focus:border-[#56b2fd] shadow-inner"
+        />
+        <button
+          type="submit"
+          disabled={!isConnected || !roomInput.trim()}
+          className="skribbl-btn-blue px-5 py-2.5 rounded-lg font-black text-sm uppercase tracking-wider text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+        >
+          <LogIn className="w-4 h-4" />
+          <span>Join</span>
+        </button>
+      </form>
     </div>
   );
 }

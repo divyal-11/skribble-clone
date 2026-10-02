@@ -1,5 +1,6 @@
 "use client";
 
+import { SkribblLogo } from "@/components/common/SkribblLogo";
 import { useState } from "react";
 import { getPlayerId } from "@/lib/socket";
 import { useGameSocket } from "@/hooks/useGameSocket";
@@ -56,10 +57,14 @@ export default function Home() {
   const isGameActive = roomStatus !== "waiting";
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-zinc-950 text-white font-sans">
+<main className="min-h-screen flex flex-col items-center justify-center p-6 text-white font-sans">
+      <div className="mb-2">
+        <SkribblLogo size="large" />
+      </div>
+
       {notification && <Toast notification={notification} />}
 
-      <ConnectionBadge isConnected={isConnected} />
+      
 
       {!currentRoom ? (
         <JoinRoomCard
@@ -105,7 +110,8 @@ export default function Home() {
           players={players}
           myPlayerId={myPlayerId}
           hostId={hostId}
-          onLeaveRoom={leaveRoom}
+          messages={messages}
+          onSendMessage={sendGuess}
           onStartGame={startGame}
         />
       )}
