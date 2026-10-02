@@ -11,15 +11,23 @@ export function useGameSocket() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [hostId, setHostId] = useState<string | null>(null);
   const [wordOptions, setWordOptions] = useState<string[]>([]);
-  const [notification, setNotification] = useState<NotificationData | null>(null);
+  const [notification, setNotification] = useState<NotificationData | null>(
+    null,
+  );
   const [roomStatus, setRoomStatus] = useState<string>("waiting");
   const [currentDrawerId, setCurrentDrawerId] = useState<string | null>(null);
-  const [choosingDrawerName, setChoosingDrawerName] = useState<string | null>(null);
+  const [choosingDrawerName, setChoosingDrawerName] = useState<string | null>(
+    null,
+  );
   const [currentWord, setCurrentWord] = useState<string | undefined>(undefined);
   const [maskedWord, setMaskedWord] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessagePayload[]>([]);
   const [roundEndsAt, setRoundEndsAt] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [revealedWord, setRevealedWord] = useState<string | null>(null);
+  const [finalScores, setFinalScores] = useState<Record<string, number> | null>(
+    null,
+  );
 
   const showNotification = (message: string, type: "join" | "leave") => {
     setNotification({ message, type });
@@ -33,7 +41,10 @@ export function useGameSocket() {
       return;
     }
     const updateTime = () => {
-      const remaining = Math.max(0, Math.ceil((roundEndsAt - Date.now()) / 1000));
+      const remaining = Math.max(
+        0,
+        Math.ceil((roundEndsAt - Date.now()) / 1000),
+      );
       setTimeLeft(remaining);
     };
     updateTime();
@@ -102,6 +113,7 @@ export function useGameSocket() {
       setRoundEndsAt(null);
       setWordOptions([]);
       setCurrentWord(undefined);
+      setRevealedWord(null);
     };
 
     const onChooseWord = (data: { options: string[] }) => {
@@ -143,8 +155,30 @@ export function useGameSocket() {
         prev.map((p) => ({
           ...p,
           score: scores[p.id] !== undefined ? scores[p.id] : p.score,
-        }))
+        })),
       );
+    };
+
+    const onTurnEnded = (data: {
+      word: string;
+      scores: Record<string, number>;
+    }) => {
+      setRoomStatus("roundEnd");
+      setRevealedWord(data.word);
+      setRoundEndsAt(null);
+      setPlayers((prev) =>
+        prev.map((p) => ({
+          ...p,
+          score: data.scores[p.id] !== undefined ? data.scores[p.id] : p.score,
+          hasGuessed: false,
+        })),
+      );
+    };
+
+    const onGameEnded = (data: { finalScores: Record<string, number> }) => {
+      setRoomStatus("gameEnd");
+      setFinalScores(data.finalScores);
+      setRoundEndsAt(null);
     };
 
     socket.on("connect", onConnect);
@@ -159,6 +193,8 @@ export function useGameSocket() {
     socket.on("guessResult", onGuessResult);
     socket.on("chatMessage", onChatMessage);
     socket.on("scoreUpdate", onScoreUpdate);
+    socket.on("turnEnded", onTurnEnded);
+    socket.on("gameEnded", onGameEnded);
 
     return () => {
       socket.off("connect", onConnect);
@@ -173,6 +209,8 @@ export function useGameSocket() {
       socket.off("guessResult", onGuessResult);
       socket.off("chatMessage", onChatMessage);
       socket.off("scoreUpdate", onScoreUpdate);
+      socket.off("turnEnded", onTurnEnded);
+      socket.off("gameEnded", onGameEnded);
     };
   }, []);
 
@@ -242,6 +280,8 @@ export function useGameSocket() {
     choosingDrawerName,
     currentWord,
     maskedWord,
+    revealedWord,
+    finalScores,
     messages,
     sendGuess,
     timeLeft,
