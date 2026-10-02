@@ -91,3 +91,17 @@ export async function updatePlayerScore(
   return { players, updatedScores };
 }
 
+
+// resets hasguessed to false for  all players in the room for the new round
+export async function resetPlayerGuessed(roomId:string):
+Promise<Player[]>{
+  const players = await getRoomPlayers(roomId);
+  const playerskey = `room:${roomId}:players`;
+
+  for(const player of players){
+    player.hasGuessed = false;
+    await redis.hset(playerskey,player.id,JSON.stringify(player));
+  }
+  return players;
+}
+
