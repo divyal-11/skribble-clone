@@ -1,26 +1,125 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b458b;
+  --foreground: #ffffff;
+
+  /* Official Skribbl.io Palette Tokens */
+  --COLOR_PANEL_BG: rgba(12, 44, 150, 0.78);
+  --COLOR_PANEL_LO: rgba(7, 36, 131, 0.78);
+  --COLOR_PANEL_BORDER: #040a33;
+  --COLOR_PANEL_BORDER_FOCUS: #56b2fd;
+
+  --COLOR_INPUT_BG: #ffffff;
+  --COLOR_INPUT_TEXT: #2c2c2c;
+  --COLOR_INPUT_BORDER: #707070;
+
+  --COLOR_CHAT_BG_BASE: #ffffff;
+  --COLOR_CHAT_BG_ALT: #ececec;
+  --COLOR_CHAT_BG_GUESSED_BASE: #e7ffdf;
+  --COLOR_CHAT_BG_GUESSED_ALT: #cfffbd;
+  --COLOR_CHAT_TEXT_GUESSED: #56ce27;
+  --COLOR_CHAT_TEXT_CLOSE: #e2cb00;
+
+  --COLOR_PLAYER_BG_BASE: #ffffff;
+  --COLOR_PLAYER_BG_ALT: #ececec;
+  --COLOR_PLAYER_BG_GUESSED_BASE: #5bdd4a;
+  --COLOR_PLAYER_BG_GUESSED_ALT: #48c737;
+  --COLOR_PLAYER_ME: #4998ff;
+  --COLOR_PLAYER_ME_GUESSED: #0048b5;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-nunito), Arial, sans-serif;
+  --font-mono: var(--font-inconsolata), monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: #ffffff;
+  font-family: var(--font-nunito), Arial, sans-serif;
+  background-color: #0d4ba1;
+  background-image: url("/background.png");
+  background-repeat: repeat;
+  background-size: 1000px;
+  background-attachment: fixed;
 }
+
+/* Authentic Skribbl Hand-Drawn Doodle Wallpaper */
+.skribbl-bg {
+  background-color: #0d4ba1;
+  background-image: url("/background.png");
+  background-repeat: repeat;
+  background-size: 520px;
+  background-attachment: fixed;
+}
+
+
+/* Skribbl 3D Arcade Buttons */
+.skribbl-btn-green {
+  background-color: #53e237;
+  border-bottom: 5px solid #30aa19;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+.skribbl-btn-green:hover {
+  background-color: #38c41c;
+}
+.skribbl-btn-green:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+.skribbl-btn-blue {
+  background-color: #2c8de7;
+  border-bottom: 5px solid #1361a9;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+.skribbl-btn-blue:hover {
+  background-color: #1671c5;
+}
+.skribbl-btn-blue:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+/* Animated Floating Sine-Wave for doodl.io Logo */
+@keyframes doodl_float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+/* Dynamic Continuous Cartoon Keyframes for Doodl Icons */
+@keyframes doodl_ring {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-14deg); }
+  75% { transform: rotate(14deg); }
+}
+
+@keyframes doodl_bob {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes doodl_fan {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(-18deg) translate(-2px, -1px); }
+}
+
+@keyframes doodl_glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.95)); transform: scale(1.08); }
+}
+
+@keyframes doodl_wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
