@@ -41,6 +41,7 @@ export async function startGameInRoom(
     status: "choosing",
     currentRound: "1",
     turnOrder: JSON.stringify(turnOrder),
+    turnIndex: "0",
     currentDrawerId: currentDrawerId,
   });
   await redis.expire(roomKey, ROOM_TTL);
@@ -50,5 +51,57 @@ export async function startGameInRoom(
     turnOrder,
     currentDrawerId,
     totalRounds: room.totalRounds,
+  };
+}
+
+export async function advanceTurnInRoom(roomId:string):Promise <{
+  gameOver: boolean;
+  currentDrawerId?:string;
+  currentRound?:number;
+  totalRounds?:number;
+}>{
+  const roomKey = `room:${roomId}`;
+  const data = await redis.hgetall(roomKey);
+  if(!data || !data.turnOrder) return {gameOver: true};
+
+  const turnOrder = JSON.parse(data.turnOrder) as string[];
+  const totalRounds = parseInt(data.totalRounds || "3", 10);
+  let currentRound = parseInt(data.currentRound || "1", 10);
+  let turnIndex = parseInt(data.turnIndex || "0", 10) + 1;
+
+  //if all players have had a turn in this round, advance round
+  if(turnIndex >= turnOrder.length){
+    turnIndex = 0;
+    currentRound +=1;
+  }
+
+  //check is all rounds are complete
+  if(currentRound > totalRounds){
+    await redis.hset(roomKey, "status", "finished");
+
+    return { 
+      gameOver: true, 
+      totalRounds, 
+      currentRound 
+    };
+  }
+
+  const currentDrawerId = turnOrder[turnIndex];
+  //save the new state
+  await redis.hset(roomKey,{
+    status: "choosing",
+    currentRound: currentRound.toString(),
+    turnIndex: turnIndex.toString(),
+    currentDrawerId,
+    currentWord: "",
+  });
+
+  await redis.expire(roomKey, ROOM_TTL);
+
+  return { 
+    gameOver: false, 
+    currentDrawerId, 
+    currentRound, 
+    totalRounds 
   };
 }
