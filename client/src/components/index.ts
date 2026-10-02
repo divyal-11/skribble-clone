@@ -7,3 +7,4 @@ export * from "./canvas/Canvas";
 export * from "./chat/ChatBox";
 export * from "./game/WordChoosingBanner";
 export { TurnEndBanner } from "./game/TurnEndBanner";
+export { GamePodium } from "./game/GamePodium";

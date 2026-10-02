@@ -12,6 +12,7 @@ import {
   ConnectionBadge,
   Canvas,
   ChatBox,
+  GamePodium
 } from "@/components";
 
 export default function Home() {
@@ -38,7 +39,8 @@ export default function Home() {
     messages,
     sendGuess,
     timeLeft,
-    revealedWord
+    revealedWord,
+    finalScores
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -76,6 +78,15 @@ export default function Home() {
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           isConnected={isConnected}
+        />
+      ) : roomStatus === "gameEnd" ? (
+        /* 🏆 1. Game Over Podium Screen */
+        <GamePodium
+          players={players}
+          finalScores={finalScores}
+          isHost={myPlayerId === hostId}
+          onPlayAgain={startGame}
+          onLeaveRoom={leaveRoom}
         />
       ) : isGameActive ? (
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-4">
