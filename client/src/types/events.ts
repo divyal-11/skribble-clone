@@ -75,3 +75,16 @@ export interface ServerToClientEvents {
   gameEnded: (payload: { finalScores: Record<string, number> }) => void;
   pong: () => void;
 }
+
+export interface RoomSettings {
+  maxPlayers: number;
+  drawTime: number;        // 30, 40, 50, 60, 70, 80, 90, 100, 120
+  rounds: number;          // 2, 3, 4, 5, 6, 8, 10
+  hints: number;           // 0, 1, 2, 3, 4, 5
+  wordCount: number;       // 3, 4, 5
+  language: string;        // "English"
+  gameMode: string;        // "Normal" | "Hidden" | "Combination"
+  customWords: string;     // comma-separated words
+  customWordsOnly: boolean;
+}
+
