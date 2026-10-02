@@ -6,11 +6,11 @@ import { ClientToServerEvents, ServerToClientEvents } from "@/types/events";
 export function getPlayerId():string{
   if(typeof window === 'undefined') return '';
 
-  let id= sessionStorage.getItem('skribbl_player_id');
+  let id = sessionStorage.getItem('doodl_player_id');
 
-  if(!id){
-    id  = crypto.randomUUID();
-    sessionStorage.setItem('skribbl_player_id', id);
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem('doodl_player_id', id);
   }
   return id;
 }
