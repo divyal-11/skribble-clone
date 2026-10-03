@@ -181,6 +181,11 @@ export function useGameSocket() {
       setRoundEndsAt(null);
     };
 
+    const onHintRevealed = (data: { maskedWord: string }) => {
+      setMaskedWord(data.maskedWord);
+    };
+
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("joinedRoom", onJoinedRoom);
@@ -191,6 +196,7 @@ export function useGameSocket() {
     socket.on("chooseWord", onChooseWord);
     socket.on("wordChosen", onWordChosen);
     socket.on("guessResult", onGuessResult);
+    socket.on("hintRevealed", onHintRevealed);
     socket.on("chatMessage", onChatMessage);
     socket.on("scoreUpdate", onScoreUpdate);
     socket.on("turnEnded", onTurnEnded);
@@ -206,6 +212,7 @@ export function useGameSocket() {
       socket.off("choosingWord", onChoosingWord);
       socket.off("chooseWord", onChooseWord);
       socket.off("wordChosen", onWordChosen);
+      socket.off("hintRevealed", onHintRevealed);
       socket.off("guessResult", onGuessResult);
       socket.off("chatMessage", onChatMessage);
       socket.off("scoreUpdate", onScoreUpdate);

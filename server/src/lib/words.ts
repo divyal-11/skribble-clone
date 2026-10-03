@@ -19,13 +19,18 @@ export function getRandomWords(count: number = 3): string[] {
   return shuffled.slice(0, count);
 }
 
-/**
- * Transforms a word into masked underscores: 'apple' -> '_ _ _ _ _'
- * Preserves spaces between multi-word phrases: 'ice cream' -> '_ _ _   _ _ _ _ _'
- */
-export function maskWord(word: string): string {
+//Transforms a word into masked underscores, leaving revealed letter indices visible:
+//'apple' with revealed [1] -> '_ P _ _ _'
+// Preserves spaces and hyphens.
+export function maskWord(word: string, revealedIndices: number[] = []): string {
+  const revealedSet = new Set(revealedIndices);
   return word
     .split("")
-    .map((char) => (char === " " ? "  " : "_"))
+    .map((char,index)=>{
+      if(char === " ") return " ";
+      if(char === "-") return "-";
+      if(revealedSet.has(index)) return char.toUpperCase();
+      return "_";
+    })
     .join(" ");
 }

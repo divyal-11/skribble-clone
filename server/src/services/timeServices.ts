@@ -8,7 +8,7 @@ import { getRoom } from "./roomService.js";
 import { getRoomPlayers, resetPlayerGuessed } from "./playerService.js";
 import { advanceTurnInRoom } from "./turnService.js";
 import { clearRoomStrokes } from "./strokeService.js";
-import { getRandomWords } from "../lib/words.js";
+import { getRandomWords, maskWord } from "../lib/words.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -21,18 +21,25 @@ interface ActiveTimer {
   intervalId: NodeJS.Timeout;
   endsAt: number;
   duration: number;
+  revealedIndices: number[];
+  hint50Given: boolean;
+  hint75Given: boolean;
 }
 
 const activeTimers = new Map<string, ActiveTimer>();
 
-//returns remaining secs on the clock for a room
+/**
+ * Returns remaining seconds on the clock for a room (0 if not running)
+ */
 export function getRemainingTime(roomId: string): number {
   const timer = activeTimers.get(roomId);
   if (!timer) return 0;
   return Math.max(0, Math.round((timer.endsAt - Date.now()) / 1000));
 }
 
-//stops and clears any runnig timer for a room
+/**
+ * Stops and clears any running timer for a room
+ */
 export function stopTurnTimer(roomId: string): void {
   const timer = activeTimers.get(roomId);
   if (timer) {
@@ -41,18 +48,81 @@ export function stopTurnTimer(roomId: string): void {
   }
 }
 
-//starts the round countdown timer(ticks every sec)
+/**
+ * Picks a random unrevealed letter and broadcasts the updated hint to guessers
+ */
+async function revealRandomHint(
+  io: AppServer,
+  roomId: string,
+  timer: ActiveTimer
+): Promise<void> {
+  const room = await getRoom(roomId);
+  if (!room || !room.currentWord || room.status !== "drawing") return;
+
+  const word = room.currentWord;
+  const unrevealedIndices: number[] = [];
+
+  for (let i = 0; i < word.length; i++) {
+    const char = word[i];
+    if (char !== " " && char !== "-" && !timer.revealedIndices.includes(i)) {
+      unrevealedIndices.push(i);
+    }
+  }
+
+  if (unrevealedIndices.length <= 1) return; // Leave at least 1 letter to guess
+
+  const randomIndex = unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
+  timer.revealedIndices.push(randomIndex);
+
+  const maskedWord = maskWord(word, timer.revealedIndices);
+  const roomSockets = await io.in(roomId).fetchSockets();
+
+  roomSockets.forEach((s) => {
+    if (s.data.playerId !== room.currentDrawerId) {
+      s.emit("hintRevealed", { maskedWord });
+    }
+  });
+
+  console.log(`💡 Random hint revealed in ${roomId}: "${maskedWord}"`);
+}
+
+/**
+ * Checks elapsed turn time and triggers hints at 50% and 75% thresholds
+ */
+function checkProgressiveHints(
+  io: AppServer,
+  roomId: string,
+  timer: ActiveTimer,
+  remaining: number
+): void {
+  const elapsed = (timer.duration - remaining) / timer.duration;
+
+  if (elapsed >= 0.5 && !timer.hint50Given && remaining > 5) {
+    timer.hint50Given = true;
+    revealRandomHint(io, roomId, timer);
+  } else if (elapsed >= 0.75 && !timer.hint75Given && remaining > 5) {
+    timer.hint75Given = true;
+    revealRandomHint(io, roomId, timer);
+  }
+}
+
+/**
+ * Starts the round countdown timer (ticks every sec, monitors hints)
+ */
 export function startTurnTimer(
   io: AppServer,
   roomId: string,
-  durationSeconds: number = 60,
+  durationSeconds: number = 60
 ): void {
-  stopTurnTimer(roomId); //clear existing timer
-
+  stopTurnTimer(roomId);
   const endsAt = Date.now() + durationSeconds * 1000;
 
   const intervalId = setInterval(async () => {
+    const timer = activeTimers.get(roomId);
+    if (!timer) return;
+
     const remaining = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+    checkProgressiveHints(io, roomId, timer, remaining);
 
     if (remaining <= 0) {
       stopTurnTimer(roomId);
@@ -64,95 +134,84 @@ export function startTurnTimer(
     intervalId,
     endsAt,
     duration: durationSeconds,
+    revealedIndices: [],
+    hint50Given: false,
+    hint75Given: false,
   });
 
   console.log(`⏱️ Turn timer started for room ${roomId}: ${durationSeconds}s`);
 }
 
+/**
+ * Ends turn early (called when all guessers find the secret word)
+ */
 export async function triggerTurnEndEarly(
   io: AppServer,
-  roomId: string,
+  roomId: string
 ): Promise<void> {
-  console.log(
-    `⚡ All players guessed in ${roomId}! Triggering early turn end.`,
-  );
+  console.log(`⚡ All players guessed in ${roomId}! Triggering early turn end.`);
   stopTurnTimer(roomId);
   await handleTurnEnd(io, roomId);
 }
 
-//handles turn wrap-up 5s intermission and next turn / game over transition
+/**
+ * Advances to the next turn or ends the match after intermission
+ */
+async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void> {
+  await resetPlayerGuessed(roomId);
+  const nextTurn = await advanceTurnInRoom(roomId);
+
+  if (nextTurn.gameOver) {
+    const finalPlayers = await getRoomPlayers(roomId);
+    const finalScores: Record<string, number> = {};
+    finalPlayers.forEach((p) => { finalScores[p.id] = p.score; });
+    io.to(roomId).emit("gameEnded", { finalScores });
+    console.log(`🏆 Game ended in room ${roomId}!`);
+    return;
+  }
+
+  const players = await getRoomPlayers(roomId);
+  const nextDrawer = players.find((p) => p.id === nextTurn.currentDrawerId);
+
+  if (nextDrawer) {
+    io.to(roomId).emit("choosingWord", {
+      drawerId: nextDrawer.id,
+      drawerName: nextDrawer.name,
+    });
+
+    const wordOptions = getRandomWords(3);
+    const roomSockets = await io.in(roomId).fetchSockets();
+    const drawerSocket = roomSockets.find((s) => s.data.playerId === nextTurn.currentDrawerId);
+    drawerSocket?.emit("chooseWord", { options: wordOptions });
+
+    console.log(
+      `🎨 Next turn in ${roomId}: ${nextDrawer.name} (Round ${nextTurn.currentRound}/${nextTurn.totalRounds})`
+    );
+  }
+}
+
+/**
+ * Handles turn wrap-up, canvas clear, and schedules 5s intermission
+ */
 export async function handleTurnEnd(
   io: AppServer,
-  roomId: string,
+  roomId: string
 ): Promise<void> {
   stopTurnTimer(roomId);
 
   const room = await getRoom(roomId);
   const players = await getRoomPlayers(roomId);
 
-  //build current scores map
   const scores: Record<string, number> = {};
-  players.forEach((p) => {
-    scores[p.id] = p.score;
-  });
+  players.forEach((p) => { scores[p.id] = p.score; });
 
-  //broadcast turnend with revealed word and scores
   const revealedWord = room?.currentWord ?? "";
-  io.to(roomId).emit("turnEnded", {
-    word: revealedWord,
-    scores,
-  });
-  console.log(`turn ended in ${roomId} word was:${revealedWord}`);
+  io.to(roomId).emit("turnEnded", { word: revealedWord, scores });
+  console.log(`🏁 Turn ended in ${roomId}. Word was: "${revealedWord}"`);
 
-  //clear canvas in redis and tell clients to clear
   await clearRoomStrokes(roomId);
   io.to(roomId).emit("drawData", { type: "clear", x: 0, y: 0 });
 
-  //5 sec scorecard intermission before next turn and round
-  setTimeout(async () => {
-    // Reset guess status for all players in Redis
-    await resetPlayerGuessed(roomId);
-    // Advance turn or round in Redis
-    const nextTurn = await advanceTurnInRoom(roomId);
-
-    if (nextTurn.gameOver) {
-      // Game finished: emit final rankings
-      const finalPlayers = await getRoomPlayers(roomId);
-      const finalScores: Record<string, number> = {};
-      finalPlayers.forEach((p) => {
-        finalScores[p.id] = p.score;
-      });
-
-      io.to(roomId).emit("gameEnded", { finalScores });
-      console.log(`🏆 Game ended in room ${roomId}!`);
-      return;
-    }
-
-    // Next turn: notify room who is drawing
-    const updatedPlayers = await getRoomPlayers(roomId);
-    const nextDrawer = updatedPlayers.find(
-      (p) => p.id === nextTurn.currentDrawerId,
-    );
-
-    if (nextDrawer) {
-      io.to(roomId).emit("choosingWord", {
-        drawerId: nextDrawer.id,
-        drawerName: nextDrawer.name,
-      });
-
-      // Send 3 fresh word options privately to the new drawer
-      const wordOptions = getRandomWords(3);
-      const roomSockets = await io.in(roomId).fetchSockets();
-      const drawerSocket = roomSockets.find(
-        (s) => s.data.playerId === nextTurn.currentDrawerId,
-      );
-
-      if (drawerSocket) {
-        drawerSocket.emit("chooseWord", { options: wordOptions });
-      }
-      console.log(
-        `🎨 Next turn in ${roomId}: ${nextDrawer.name} (Round ${nextTurn.currentRound}/${nextTurn.totalRounds})`,
-      );
-    }
-  }, 5000);
+  // 5s scorecard intermission before next turn/round
+  setTimeout(() => transitionToNextTurn(io, roomId), 5000);
 }

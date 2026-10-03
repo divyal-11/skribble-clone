@@ -67,6 +67,7 @@ export interface ServerToClientEvents {
     text?: string;
     word?: string;
   }) => void;
+  hintRevealed: (payload: { maskedWord: string }) => void;
   scoreUpdate: (payload: { scores: Record<string, number> }) => void;
   turnEnded: (payload: {
     word: string;
