@@ -6,10 +6,10 @@ import {
   Player,
 } from "../../types/events.js";
 import { addPlayerToRoom } from "../../services/playerService.js";
-import { getRoom } from "../../services/roomService.js";
 import { getRoomStrokes } from "../../services/strokeService.js";
 import { maskWord } from "../../lib/words.js";
-
+import { cancelDisconnectGracePeriod } from "./disconnect.js";
+import { getRoundEndsAt } from "../../services/timeServices.js";
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -25,6 +25,9 @@ export function handleJoinRoom(socket: AppSocket) {
     const cleanRoomId = roomId.trim().toUpperCase();
     const cleanPlayerName = playerName.trim() || "Anonymous";
 
+    // 1. Cancel any disconnect grace period if reconnecting
+    cancelDisconnectGracePeriod(playerId);
+
     const player: Player = {
       id: playerId,
       name: cleanPlayerName,
@@ -33,16 +36,18 @@ export function handleJoinRoom(socket: AppSocket) {
       connected: true,
     };
 
-    const { room, players } = await addPlayerToRoom(cleanRoomId, player);
+    const { room, players,isReconnect } = await addPlayerToRoom(cleanRoomId, player);
 
     socket.join(cleanRoomId);
     socket.data.roomId = cleanRoomId;
 
     console.log(`👤 ${player.name} (${player.id}) joined room ${cleanRoomId}`);
 
-    const isDrawing = room.status === "drawing";
     const masked = room.currentWord ? maskWord(room.currentWord) : undefined;
     const isDrawer = room.currentDrawerId === playerId;
+    const roundEndsAt = getRoundEndsAt(cleanRoomId);
+
+    // 2. Send complete room snapshot
     socket.emit("joinedRoom", {
       roomId: cleanRoomId,
       players,
@@ -50,8 +55,21 @@ export function handleJoinRoom(socket: AppSocket) {
       hostId: room.hostId,
       currentDrawerId: room.currentDrawerId,
       maskedWord: masked,
-      word: isDrawer ? room.currentWord : undefined, // only send full word to drawer
+      word: isDrawer ? room.currentWord : undefined,
     });
+
+    // 3. If mid-turn, restore the round countdown timer and word
+    if (room.status === "drawing" && roundEndsAt) {
+      socket.emit("wordChosen", {
+        maskedWord: masked || "",
+        drawerId: room.currentDrawerId || "",
+        word: isDrawer ? room.currentWord : undefined,
+        roundEndsAt,
+        duration: Math.max(1, Math.round((roundEndsAt - Date.now()) / 1000)),
+      });
+    }
+
+
 
 
     //replay existing strokes to the joining/reconnectnig player
@@ -60,6 +78,8 @@ export function handleJoinRoom(socket: AppSocket) {
       socket.emit("canvasSync",{strokes})
     }
 
-    socket.to(cleanRoomId).emit("playerJoined", { player });
-  });
+    // Only notify room if brand new player
+    if (!isReconnect) {
+      socket.to(cleanRoomId).emit("playerJoined", { player });
+    }  });
 }

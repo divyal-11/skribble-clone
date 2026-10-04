@@ -55,7 +55,16 @@ export function useGameSocket() {
   useEffect(() => {
     socket.connect();
 
-    const onConnect = () => setIsConnected(true);
+    const onConnect = () => {
+      setIsConnected(true);
+      // Auto-rejoin room if refreshing an active game
+      const savedRoom = sessionStorage.getItem("doodl_room");
+      const savedName = sessionStorage.getItem("doodl_name");
+      if (savedRoom && savedName) {
+        console.log(`🔄 Auto-rejoining saved room: ${savedRoom} as ${savedName}`);
+        socket.emit("joinRoom", { roomId: savedRoom, playerName: savedName });
+      }
+    }
     const onDisconnect = () => setIsConnected(false);
 
     const onJoinedRoom = (data: {
@@ -227,14 +236,22 @@ export function useGameSocket() {
     for (let i = 0; i < 6; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+    sessionStorage.setItem("doodl_room", code);
+    sessionStorage.setItem("doodl_name", playerName);
     socket.emit("joinRoom", { roomId: code, playerName });
   };
 
   const joinRoom = (roomId: string, playerName: string) => {
+    sessionStorage.setItem("doodl_room", roomId);
+    sessionStorage.setItem("doodl_name", playerName);
     socket.emit("joinRoom", { roomId, playerName });
   };
 
   const leaveRoom = () => {
+    // Clear storage so the user doesn't get auto-rejoined after leaving
+    sessionStorage.removeItem("doodl_room");
+    sessionStorage.removeItem("doodl_name");
+
     if (currentRoom) {
       socket.emit("leaveRoom", { roomId: currentRoom });
       setCurrentRoom(null);

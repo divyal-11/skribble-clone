@@ -48,6 +48,8 @@ export function stopTurnTimer(roomId: string): void {
   }
 }
 
+
+
 /**
  * Picks a random unrevealed letter and broadcasts the updated hint to guessers
  */
@@ -215,3 +217,12 @@ export async function handleTurnEnd(
   // 5s scorecard intermission before next turn/round
   setTimeout(() => transitionToNextTurn(io, roomId), 5000);
 }
+
+/**
+ * Returns the timestamp when the current turn ends (or null if not running)
+ */
+export function getRoundEndsAt(roomId: string): number | null {
+  const timer = activeTimers.get(roomId);
+  return timer ? timer.endsAt : null;
+}
+

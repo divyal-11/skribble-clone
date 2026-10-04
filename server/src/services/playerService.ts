@@ -11,7 +11,7 @@ export async function getRoomPlayers(roomId: string): Promise<Player[]> {
 export async function addPlayerToRoom(
   roomId: string,
   player: Player
-): Promise<{ room: RoomMeta; players: Player[] }> {
+): Promise<{ room: RoomMeta; players: Player[],isReconnect:boolean }> {
   const roomKey = `room:${roomId}`;
   const playersKey = `room:${roomId}:players`;
 
@@ -31,13 +31,46 @@ export async function addPlayerToRoom(
       totalRounds: room.totalRounds.toString(),
     });
   }
+  
+  //check if player already exists in the room(reconnection)
+  const existingPlayerRaw = await redis.hget(playersKey, player.id)
+  let isReconnect = false;
+  let finalPlayer = player;
 
-  await redis.hset(playersKey, player.id, JSON.stringify(player));
+  if(existingPlayerRaw){
+    isReconnect = true;
+    const existing = JSON.parse(existingPlayerRaw) as Player;
+    //preserve existing score and guess state
+    finalPlayer = {
+      ...existing,
+      connected: true,
+      name: player.name || existing.name,
+    }
+    console.log(`🔄 Preserved existing score (${existing.score} pts) for reconnecting player ${player.id}`);    
+  }
+
+  await redis.hset(playersKey, player.id, JSON.stringify(finalPlayer));
   await redis.expire(roomKey, ROOM_TTL);
   await redis.expire(playersKey, ROOM_TTL);
 
   const players = await getRoomPlayers(roomId);
-  return { room, players };
+  return { room, players,isReconnect };
+}
+
+export async function setPlayerConnectionStatus(
+  roomId: string,
+  playerId: string,
+  connected: boolean
+): Promise<Player | null>{
+  const playersKey = `room:${roomId}:players`;
+  const playerRaw = await redis.hget(playersKey,playerId);
+  if(!playerRaw) return null;
+
+  const player = JSON.parse(playerRaw) as Player;
+  player.connected = connected;
+  await redis.hset(playersKey,playerId,JSON.stringify(player));
+
+  return player;
 }
 
 export async function removePlayerFromRoom(
@@ -93,8 +126,7 @@ export async function updatePlayerScore(
 
 
 // resets hasguessed to false for  all players in the room for the new round
-export async function resetPlayerGuessed(roomId:string):
-Promise<Player[]>{
+export async function resetPlayerGuessed(roomId:string):Promise<Player[]>{
   const players = await getRoomPlayers(roomId);
   const playerskey = `room:${roomId}:players`;
 
