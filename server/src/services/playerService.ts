@@ -69,8 +69,8 @@ export async function addPlayerToRoom(
     console.log(`🔄 Preserved existing score (${existing.score} pts) for reconnecting player ${player.id}`);    
   }
 
-  // The room owner/host belongs to Blue Team by default
-  if (finalPlayer.id === room.hostId && !finalPlayer.teamId) {
+  // The room owner/host belongs to Blue Team by default (only in Team mode)
+  if (room.gameMode === "Team" && finalPlayer.id === room.hostId && !finalPlayer.teamId) {
     finalPlayer.teamId = "blue";
   }
 
