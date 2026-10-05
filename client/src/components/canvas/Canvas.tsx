@@ -34,7 +34,7 @@ export function Canvas({
   revealedWord,
   players,
 }: CanvasProps) {
-  const [color, setColor] = useState("#ffffff");
+  const [color, setColor] = useState("#000000");
   const [size, setSize] = useState(4);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -53,7 +53,7 @@ export function Canvas({
       />
 
       {/* 2. Responsive Canvas Board */}
-      <div className="relative w-full aspect-[16/10] bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative w-full aspect-[16/10] bg-white border-2 border-zinc-300 rounded-2xl overflow-hidden shadow-2xl">
         {isChoosing && !isDrawer && choosingDrawerName && (
           <WordChoosingBanner drawerName={choosingDrawerName} />
         )}
@@ -69,7 +69,7 @@ export function Canvas({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
-          className={`w-full h-full touch-none ${
+          className={`w-full h-full touch-none bg-white ${
             isDrawer ? "cursor-crosshair" : "cursor-default"
           }`}
         />

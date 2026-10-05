@@ -28,7 +28,7 @@ export function renderStroke(
   const y = stroke.y * canvas.height;
   const prevX = (stroke.prevX ?? stroke.x) * canvas.width;
   const prevY = (stroke.prevY ?? stroke.y) * canvas.height;
-  ctx.strokeStyle = stroke.color || "#ffffff";
+  ctx.strokeStyle = stroke.color || "#000000";
   ctx.lineWidth = stroke.size || 4;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";

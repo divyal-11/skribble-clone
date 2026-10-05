@@ -63,9 +63,9 @@ export function CanvasToolbar({
         {/* Eraser */}
         <button
           type="button"
-          onClick={() => setColor("#18181b")}
+          onClick={() => setColor("#ffffff")}
           className={`p-2 rounded-lg border transition ${
-            color === "#18181b" ? "bg-zinc-800 border-indigo-400 text-indigo-400" : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+            color === "#ffffff" ? "bg-zinc-800 border-indigo-400 text-indigo-400" : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
           }`}
           title="Eraser"
         >
