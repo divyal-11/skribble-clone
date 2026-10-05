@@ -110,3 +110,14 @@ export function DoodlCrown({ className = "w-5 h-5" }: IconProps) {
     </svg>
   );
 }
+
+// ✏️ Drawing Pencil: Animated pencil indicating active drawer
+export function DoodlPencil({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={`drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] ${className}`} style={{ animation: "doodl_wobble 0.7s ease-in-out infinite" }}>
+      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#f59e0b" stroke="#040a33" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M15 5l4 4" stroke="#040a33" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="3.8" cy="20.2" r="0.8" fill="#ef4444" />
+    </svg>
+  );
+}

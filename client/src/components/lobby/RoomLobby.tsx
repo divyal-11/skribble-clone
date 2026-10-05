@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Player, RoomSettings, ChatMessagePayload } from "@/types/events";
+import { Player, RoomSettings, ChatMessagePayload, TeamId } from "@/types/events";
 import { PlayerList } from "./PlayerList";
 import { LobbySettingsForm } from "./LobbySettingsForm";
 import { LobbyHeader } from "./LobbyHeader";
@@ -13,6 +13,7 @@ interface RoomLobbyProps {
   messages: ChatMessagePayload[];
   onSendMessage: (msg: string) => void;
   onStartGame: (settings?: RoomSettings) => void;
+  onSwitchTeam?: (teamId: TeamId) => void;
 }
 
 export function RoomLobby({
@@ -23,6 +24,7 @@ export function RoomLobby({
   messages,
   onSendMessage,
   onStartGame,
+  onSwitchTeam,
 }: RoomLobbyProps) {
   const isHost = hostId === myPlayerId;
   const canStart = isHost && players.length >= 2;
@@ -35,6 +37,7 @@ export function RoomLobby({
     wordCount: 3,
     language: "English",
     gameMode: "Normal",
+    teamCount: 2,
     customWords: "",
     customWordsOnly: false,
   });
@@ -60,6 +63,7 @@ export function RoomLobby({
             players={players}
             myPlayerId={myPlayerId}
             hostId={hostId}
+            onSwitchTeam={onSwitchTeam}
           />
         </div>
 

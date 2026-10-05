@@ -1,9 +1,12 @@
+export type TeamId = "red" | "blue" | "green" | "yellow";
+
 export interface Player {
   id: string;
   name: string;
   score: number;
   hasGuessed: boolean;
   connected: boolean;
+  teamId?: TeamId;
 }
 
 export interface DrawStroke {
@@ -32,6 +35,7 @@ export interface ClientToServerEvents {
   draw: (payload: { roomId: string } & DrawStroke) => void;
   clearCanvas: (payload: { roomId: string }) => void;
   guess: (payload: { roomId: string; text: string }) => void;
+  switchTeam: (payload: { roomId: string; teamId: TeamId }) => void;
   ping: () => void;
 }
 
@@ -68,12 +72,14 @@ export interface ServerToClientEvents {
     word?: string;
   }) => void;
   hintRevealed: (payload: { maskedWord: string }) => void;
-  scoreUpdate: (payload: { scores: Record<string, number> }) => void;
+  scoreUpdate: (payload: { scores: Record<string, number>; guesserId?: string }) => void;
   turnEnded: (payload: {
     word: string;
     scores: Record<string, number>;
   }) => void;
   gameEnded: (payload: { finalScores: Record<string, number> }) => void;
+  teamUpdated: (payload: { playerId: string; teamId: TeamId }) => void;
+  teamScoresUpdate: (payload: { scores: Record<string, number> }) => void;
   pong: () => void;
 }
 
@@ -84,7 +90,8 @@ export interface RoomSettings {
   hints: number;           // 0, 1, 2, 3, 4, 5
   wordCount: number;       // 3, 4, 5
   language: string;        // "English"
-  gameMode: string;        // "Normal" | "Hidden" | "Combination"
+  gameMode: string;        // "Normal" | "Team" | "Hidden" | "Combination"
+  teamCount?: number;      // 2, 3, 4
   customWords: string;     // comma-separated words
   customWordsOnly: boolean;
 }

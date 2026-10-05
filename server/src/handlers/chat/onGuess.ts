@@ -9,6 +9,7 @@ import { getRoomPlayers, updatePlayerScore } from "../../services/playerService.
 import { isCloseGuess, calculateGuessScore } from "../../services/chatService.js";
 import { getRemainingTime, triggerTurnEndEarly } from "../../services/timeServices.js";
 import { checkRateLimit } from "../../services/rateLimiterService.js";
+import { getTeamScores } from "../../services/teamService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -71,7 +72,15 @@ export function handleGuess(io:AppServer,socket:AppSocket){
         });
         
         //broadcast updated scoreboard
-        io.to(cleanRoomId).emit("scoreUpdate",{scores:updatedScores});
+        io.to(cleanRoomId).emit("scoreUpdate", {
+          scores: updatedScores,
+          guesserId: playerId,
+        });
+
+        const teamScores = await getTeamScores(cleanRoomId);
+        if (Object.keys(teamScores).length > 0) {
+          io.to(cleanRoomId).emit("teamScoresUpdate", { scores: teamScores });
+        }
 
         //if all non drawer have gusssed , end the turn early
         const guessers = updatedPlayers.filter((p)=>p.id !== room.currentDrawerId);

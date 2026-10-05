@@ -7,6 +7,7 @@ import {
 import { startGameInRoom } from "../../services/turnService.js";
 import { getRoomPlayers } from "../../services/playerService.js";
 import { getWordOptionsForRoom } from "../../services/wordService.js";
+import { autoBalanceTeams, getTeamScores } from "../../services/teamService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -24,14 +25,26 @@ type AppSocket = Socket<
 export function handleStartGame(io: AppServer, socket: AppSocket) {
   const playerId = socket.data.playerId;
 
-  socket.on("startGame", async ({ roomId }) => {
+  socket.on("startGame", async ({ roomId, settings }) => {
     const cleanRoomId = roomId.trim().toUpperCase();
     console.log(`🎮 Start Game requested for room ${cleanRoomId} by ${playerId}`);
 
-    const result = await startGameInRoom(cleanRoomId, playerId);
+    const result = await startGameInRoom(cleanRoomId, playerId, settings);
     if (!result.success || !result.turnOrder || !result.currentDrawerId) {
       console.warn(`⚠️ Cannot start game in room ${cleanRoomId}: ${result.error}`);
       return;
+    }
+
+    // If Team mode, ensure all players are assigned to active teams
+    if (settings?.gameMode === "Team") {
+      const balanced = await autoBalanceTeams(cleanRoomId, settings.teamCount || 2);
+      balanced.forEach((p) => {
+        if (p.teamId) {
+          io.to(cleanRoomId).emit("teamUpdated", { playerId: p.id, teamId: p.teamId });
+        }
+      });
+      const teamScores = await getTeamScores(cleanRoomId);
+      io.to(cleanRoomId).emit("teamScoresUpdate", { scores: teamScores });
     }
 
     const players = await getRoomPlayers(cleanRoomId);

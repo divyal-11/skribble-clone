@@ -5,6 +5,8 @@ import { useCanvasDrawing } from "./useCanvasDrawing";
 import { WordChoosingBanner } from "../game/WordChoosingBanner";
 import { TurnEndBanner } from "../game/TurnEndBanner";
 
+import { Player } from "@/types/events";
+
 interface CanvasProps {
   roomId: string;
   isDrawer: boolean;
@@ -16,6 +18,7 @@ interface CanvasProps {
   choosingDrawerName?: string;
   isRoundEnd?: boolean;
   revealedWord?: string;
+  players?: Player[];
 }
 
 export function Canvas({
@@ -29,6 +32,7 @@ export function Canvas({
   choosingDrawerName,
   isRoundEnd,
   revealedWord,
+  players,
 }: CanvasProps) {
   const [color, setColor] = useState("#ffffff");
   const [size, setSize] = useState(4);
@@ -55,7 +59,7 @@ export function Canvas({
         )}
 
         {isRoundEnd && revealedWord && (
-          <TurnEndBanner word={revealedWord} />
+          <TurnEndBanner word={revealedWord} players={players} />
         )}
         <canvas
           ref={canvasRef}

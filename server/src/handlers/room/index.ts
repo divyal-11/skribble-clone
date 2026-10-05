@@ -7,6 +7,7 @@ import {
 import { handleJoinRoom } from "./joinRoom.js";
 import { handleLeaveRoom } from "./leaveRoom.js";
 import { handleDisconnect } from "./disconnect.js";
+import { handleSwitchTeam } from "./switchTeam.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -25,4 +26,5 @@ export function registerRoomHandlers(io: AppServer, socket: AppSocket) {
   handleJoinRoom(socket);
   handleLeaveRoom(socket);
   handleDisconnect(socket);
+  handleSwitchTeam(io, socket);
 }

@@ -1,11 +1,16 @@
-// Shared entities
+export type TeamId = "red" | "blue" | "green" | "yellow";
+
 export interface Player {
   id: string;
   name: string;
   score: number;
   hasGuessed: boolean;
   connected: boolean;
+  teamId?: TeamId;
 }
+
+
+
 
 export interface DrawStroke {
   type: 'start' | 'line' | 'clear';
@@ -34,7 +39,7 @@ export interface ClientToServerEvents {
   draw: (payload: { roomId: string } & DrawStroke) => void;
   clearCanvas: (payload: { roomId: string }) => void;
   guess: (payload: { roomId: string; text: string }) => void;
-  // Day 1 plumbing test
+  switchTeam: (payload: { roomId: string; teamId: TeamId }) => void;
   ping: () => void;
 }
 
@@ -71,11 +76,14 @@ export interface ServerToClientEvents {
     word?: string;
   }) => void;
   hintRevealed: (payload: { maskedWord: string }) => void;
-  scoreUpdate: (payload: { scores: Record<string, number> }) => void;
+  scoreUpdate: (payload: { scores: Record<string, number>; guesserId?: string }) => void;
   turnEnded: (payload: { word: string; scores: Record<string, number> }) => void;
   gameEnded: (payload: { finalScores: Record<string, number> }) => void;
   // Day 1 plumbing test
   pong: () => void;
+  teamUpdated: (payload: { playerId: string; teamId: TeamId }) => void;
+  teamScoresUpdate: (payload: { scores: Record<string, number> }) => void;
+
 }
 
 // Data attached to each socket instance
@@ -86,13 +94,14 @@ export interface SocketData {
 
 export interface RoomSettings {
   maxPlayers: number;
-  drawTime: number;        // 30, 40, 50, 60, 70, 80, 90, 100, 120
-  rounds: number;          // 2, 3, 4, 5, 6, 8, 10
-  hints: number;           // 0, 1, 2, 3, 4, 5
-  wordCount: number;       // 3, 4, 5
-  language: string;        // "English"
-  gameMode: string;        // "Normal" | "Hidden" | "Combination"
-  customWords: string;     // comma-separated words
+  drawTime: number;
+  rounds: number;
+  hints: number;
+  wordCount: number;
+  language: string;
+  gameMode: string;        // "Normal" | "Team" | "Hidden" | "Combination"
+  teamCount?: number;      // 2, 3, 4
+  customWords: string;
   customWordsOnly: boolean;
 }
 

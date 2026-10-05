@@ -65,9 +65,20 @@ export function LobbySettingsForm({
       label: "Game Mode",
       Icon: DoodlGameMode,
       value: settings.gameMode,
-      options: ["Normal", "Hidden", "Combination"],
+      options: ["Normal", "Team", "Hidden", "Combination"],
       onChange: (v: string) => update({ gameMode: v }),
     },
+    ...(settings.gameMode === "Team"
+      ? [
+          {
+            label: "Teams",
+            Icon: DoodlPlayers,
+            value: settings.teamCount || 2,
+            options: [2, 3, 4],
+            onChange: (v: string) => update({ teamCount: Number(v) }),
+          },
+        ]
+      : []),
     {
       label: "Word Count",
       Icon: DoodlWordCount,

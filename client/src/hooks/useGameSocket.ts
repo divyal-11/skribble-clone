@@ -1,6 +1,6 @@
 "use client";
 
-import { Player, ChatMessagePayload, RoomSettings } from "@/types/events";
+import { Player, ChatMessagePayload, RoomSettings, TeamId } from "@/types/events";
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
 import { NotificationData } from "@/components/modals/Toast";
@@ -28,6 +28,7 @@ export function useGameSocket() {
   const [finalScores, setFinalScores] = useState<Record<string, number> | null>(
     null,
   );
+  const [teamScores, setTeamScores] = useState<Record<string, number>>({});
 
   const showNotification = (message: string, type: "join" | "leave") => {
     setNotification({ message, type });
@@ -159,11 +160,18 @@ export function useGameSocket() {
       setMessages((prev) => [...prev, msg]);
     };
 
-    const onScoreUpdate = ({ scores }: { scores: Record<string, number> }) => {
+    const onScoreUpdate = ({
+      scores,
+      guesserId,
+    }: {
+      scores: Record<string, number>;
+      guesserId?: string;
+    }) => {
       setPlayers((prev) =>
         prev.map((p) => ({
           ...p,
           score: scores[p.id] !== undefined ? scores[p.id] : p.score,
+          hasGuessed: p.hasGuessed || p.id === guesserId,
         })),
       );
     };
@@ -209,7 +217,18 @@ export function useGameSocket() {
     socket.on("chatMessage", onChatMessage);
     socket.on("scoreUpdate", onScoreUpdate);
     socket.on("turnEnded", onTurnEnded);
-    socket.on("gameEnded", onGameEnded);
+    const onTeamUpdated = (data: { playerId: string; teamId: TeamId }) => {
+      setPlayers((prev) =>
+        prev.map((p) => (p.id === data.playerId ? { ...p, teamId: data.teamId } : p))
+      );
+    };
+
+    const onTeamScoresUpdate = (data: { scores: Record<string, number> }) => {
+      setTeamScores(data.scores);
+    };
+
+    socket.on("teamUpdated", onTeamUpdated);
+    socket.on("teamScoresUpdate", onTeamScoresUpdate);
 
     return () => {
       socket.off("connect", onConnect);
@@ -227,6 +246,8 @@ export function useGameSocket() {
       socket.off("scoreUpdate", onScoreUpdate);
       socket.off("turnEnded", onTurnEnded);
       socket.off("gameEnded", onGameEnded);
+      socket.off("teamUpdated", onTeamUpdated);
+      socket.off("teamScoresUpdate", onTeamScoresUpdate);
     };
   }, []);
 
@@ -287,6 +308,12 @@ export function useGameSocket() {
     }
   };
 
+  const switchTeam = (teamId: TeamId) => {
+    if (currentRoom) {
+      socket.emit("switchTeam", { roomId: currentRoom, teamId });
+    }
+  };
+
   return {
     isConnected,
     currentRoom,
@@ -299,6 +326,8 @@ export function useGameSocket() {
     leaveRoom,
     startGame,
     selectWord,
+    switchTeam,
+    teamScores,
     roomStatus,
     currentDrawerId,
     choosingDrawerName,

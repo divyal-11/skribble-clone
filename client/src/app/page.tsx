@@ -14,6 +14,7 @@ import {
   ChatBox,
   GamePodium
 } from "@/components";
+import { InGameScoreboard } from "@/components/game/InGameScoreboard";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
@@ -40,7 +41,9 @@ export default function Home() {
     sendGuess,
     timeLeft,
     revealedWord,
-    finalScores
+    finalScores,
+    switchTeam,
+    teamScores,
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -89,8 +92,20 @@ export default function Home() {
           onLeaveRoom={leaveRoom}
         />
       ) : isGameActive ? (
-        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="lg:col-span-3">
+        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+          {/* 1. In-Game Live Scoreboard (Left column) */}
+          <div className="lg:col-span-3 order-2 lg:order-1 w-full">
+            <InGameScoreboard
+              players={players}
+              myPlayerId={myPlayerId}
+              hostId={hostId}
+              currentDrawerId={currentDrawerId}
+              teamScores={teamScores}
+            />
+          </div>
+
+          {/* 2. Drawing Canvas (Center column) */}
+          <div className="lg:col-span-6 xl:col-span-6 order-1 lg:order-2 w-full">
             <Canvas
               roomId={currentRoom}
               isDrawer={isDrawer}
@@ -105,9 +120,12 @@ export default function Home() {
               }
               isRoundEnd={roomStatus === "roundEnd"}
               revealedWord={revealedWord || undefined}
+              players={players}
             />
           </div>
-          <div className="lg:col-span-1 h-full min-h-[450px]">
+
+          {/* 3. Live Chat & Guesses (Right column) */}
+          <div className="lg:col-span-3 xl:col-span-3 order-3 w-full h-full min-h-[450px]">
             <ChatBox
               messages={messages}
               onSendMessage={sendGuess}
@@ -127,6 +145,7 @@ export default function Home() {
           messages={messages}
           onSendMessage={sendGuess}
           onStartGame={startGame}
+          onSwitchTeam={switchTeam}
         />
       )}
 
