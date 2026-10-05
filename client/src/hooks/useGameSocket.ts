@@ -1,9 +1,8 @@
-"use client";
-
 import { Player, ChatMessagePayload, RoomSettings, TeamId } from "@/types/events";
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
 import { NotificationData } from "@/components/modals/Toast";
+import { soundManager } from "@/lib/sound";
 
 export function useGameSocket() {
   const [isConnected, setIsConnected] = useState(false);
@@ -37,18 +36,23 @@ export function useGameSocket() {
     setTimeout(() => setNotification(null), 3500);
   };
 
-  // Synchronized countdown timer
+  // Synchronized countdown timer with tick sound effect
   useEffect(() => {
     if (!roundEndsAt) {
       setTimeLeft(60);
       return;
     }
+    let lastTick = -1;
     const updateTime = () => {
       const remaining = Math.max(
         0,
         Math.ceil((roundEndsAt - Date.now()) / 1000),
       );
       setTimeLeft(remaining);
+      if (remaining <= 5 && remaining > 0 && remaining !== lastTick) {
+        lastTick = remaining;
+        soundManager.play("tick");
+      }
     };
     updateTime();
     const interval = setInterval(updateTime, 500);
@@ -90,6 +94,7 @@ export function useGameSocket() {
 
     const onPlayerJoined = (data: { player: Player }) => {
       showNotification(`${data.player.name} joined the room`, "join");
+      soundManager.play("join");
       setPlayers((prev) => {
         if (prev.some((p) => p.id === data.player.id)) return prev;
         return [...prev, data.player];
@@ -100,6 +105,7 @@ export function useGameSocket() {
       if (data.newHostId) {
         setHostId(data.newHostId);
       }
+      soundManager.play("leave");
       setPlayers((prev) => {
         const leftPlayer = prev.find((p) => p.id === data.playerId);
         if (leftPlayer) {
@@ -147,6 +153,7 @@ export function useGameSocket() {
       setWordOptions([]);
       setCurrentWord(data.word);
       setTurnScores({});
+      soundManager.play("roundStart");
     };
 
     const onGuessResult = (data: {
@@ -160,6 +167,9 @@ export function useGameSocket() {
     };
 
     const onChatMessage = (msg: ChatMessagePayload) => {
+      if (msg.type === "correct") {
+        soundManager.play("playerGuessed");
+      }
       setMessages((prev) => [...prev, msg]);
     };
 
@@ -190,6 +200,11 @@ export function useGameSocket() {
       setRoundEndsAt(null);
       setTurnScores(data.scoreDeltas || {});
       setTurnEndReason(data.reason || "Time's up!");
+      if (data.reason?.includes("Nobody")) {
+        soundManager.play("roundEndFailure");
+      } else {
+        soundManager.play("roundEndSuccess");
+      }
       setPlayers((prev) =>
         prev.map((p) => ({
           ...p,
@@ -203,6 +218,7 @@ export function useGameSocket() {
       setRoomStatus("gameEnd");
       setFinalScores(data.finalScores);
       setRoundEndsAt(null);
+      soundManager.play("roundEndSuccess");
     };
 
     const onHintRevealed = (data: { maskedWord: string }) => {

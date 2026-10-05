@@ -1,7 +1,7 @@
 import { Player } from "@/types/events";
 import { Avatar } from "@/components/common/Avatar";
-import { DoodlCrown } from "@/components/common/DoodlIcons";
-import { Trophy, RotateCcw, LogOut } from "lucide-react";
+import { DoodlCrown, DoodlTrophy } from "@/components/common/DoodlIcons";
+import { RotateCcw, LogOut } from "lucide-react";
 
 interface GamePodiumProps {
   players: Player[];
@@ -36,6 +36,10 @@ export function GamePodium({
   const second = ranked[1];
   const third = ranked[2];
 
+  const firstScore = first ? (finalScores?.[first.id] ?? first.score) : 0;
+  const secondScore = second ? (finalScores?.[second.id] ?? second.score) : 0;
+  const thirdScore = third ? (finalScores?.[third.id] ?? third.score) : 0;
+
   const teamEntries = teamScores && Object.keys(teamScores).length > 0
     ? Object.entries(teamScores).sort((a, b) => b[1] - a[1])
     : [];
@@ -43,17 +47,20 @@ export function GamePodium({
   const winningTeam = winningTeamEntry ? TEAM_CONFIG[winningTeamEntry[0]] : null;
 
   return (
-    <div className="w-full max-w-2xl bg-[#1d273f]/95 border-4 border-[#0f172a] rounded-3xl p-6 sm:p-8 flex flex-col items-center shadow-2xl text-center animate-fade-in">
-      <div className="flex items-center gap-2 text-amber-400 mb-4">
-        <Trophy className="w-8 h-8 animate-bounce" />
-        <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white">
-          Game Over!
-        </h1>
-      </div>
+    <div className="w-full max-w-4xl bg-[#2d3246] rounded-3xl p-6 sm:p-12 flex flex-col items-center shadow-2xl text-center animate-fade-in border-4 border-[#1e2333] select-none">
+      {/* 1. Winner Announcement */}
+      {first ? (
+        <div className="text-2xl sm:text-4xl text-white font-normal mb-8 sm:mb-12 flex items-center justify-center gap-2.5">
+          <span className="font-bold text-[#fbc531]">{first.name}</span>
+          <span>is the winner!</span>
+        </div>
+      ) : (
+        <div className="text-3xl text-white font-normal mb-8">Game Over!</div>
+      )}
 
       {/* 🏆 Winning Team Banner (if Team Mode) */}
       {winningTeam && winningTeamEntry && (
-        <div className={`w-full max-w-md p-3.5 mb-6 rounded-2xl border-2 ${winningTeam.border} ${winningTeam.bg} flex items-center justify-between shadow-lg`}>
+        <div className={`w-full max-w-md p-3 mb-8 rounded-2xl border-2 ${winningTeam.border} ${winningTeam.bg} flex items-center justify-between shadow-lg`}>
           <div className="flex items-center gap-2.5">
             <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase text-white ${winningTeam.badgeBg}`}>
               Winning Team
@@ -68,71 +75,99 @@ export function GamePodium({
         </div>
       )}
 
-      {/* 3D Cartoon Podium (2nd | 1st | 3rd) */}
-      <div className="w-full flex items-end justify-center gap-3 sm:gap-6 mb-8 pt-6 min-h-[260px]">
-        {/* 2nd Place */}
+      {/* 2. Skribbl Open Outline Podiums */}
+      <div className="w-full flex items-end justify-center gap-4 sm:gap-8 mb-10 min-h-[280px]">
+        {/* 2nd Place Podium (Left) */}
         {second && (
-          <div className="flex-1 flex flex-col items-center">
-            <Avatar seed={second.id} size={54} />
-            <span className="font-bold text-sm text-zinc-300 mt-1 truncate max-w-[100px]">
-              {second.name}
-            </span>
-            <span className="text-xs text-zinc-400 font-semibold mb-2">
-              {finalScores?.[second.id] ?? second.score} pts
-            </span>
-            <div className="w-full h-28 bg-[#94a3b8] border-3 border-[#475569] rounded-t-2xl flex items-center justify-center shadow-lg">
-              <span className="text-4xl font-black text-slate-800">2</span>
+          <div className="w-36 sm:w-48 flex flex-col items-center">
+            {/* Avatar */}
+            <div className="relative mb-0 flex items-center justify-center">
+              <Avatar seed={second.name || second.id} size={64} isHost={false} />
             </div>
-          </div>
-        )}
 
-        {/* 1st Place (Center & Tallest) */}
-        {first && (
-          <div className="flex-1 flex flex-col items-center relative -top-3">
-            <div className="relative">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                <DoodlCrown className="w-8 h-8" />
+            {/* Outlined Podium Box */}
+            <div className="w-full h-28 sm:h-32 border-2 border-zinc-400 rounded-t-xl relative bg-black/10">
+              <span className="absolute top-2 left-3 font-bold text-lg sm:text-xl text-zinc-400">
+                #2
+              </span>
+              <div className="flex flex-col items-center justify-center h-full pt-3 px-2">
+                <span className="font-bold text-sm sm:text-base text-white truncate max-w-[130px]">
+                  {second.name}
+                </span>
+                <span className="text-xs sm:text-sm text-zinc-300 font-normal mt-0.5">
+                  {secondScore} points
+                </span>
               </div>
-              <Avatar seed={first.id} size={68} isHost={false} />
-            </div>
-            <span className="font-black text-base text-yellow-300 mt-1 truncate max-w-[120px]">
-              {first.name}
-            </span>
-            <span className="text-xs text-yellow-400/90 font-bold mb-2">
-              {finalScores?.[first.id] ?? first.score} pts
-            </span>
-            <div className="w-full h-36 bg-[#facc15] border-3 border-[#a16207] rounded-t-2xl flex items-center justify-center shadow-xl">
-              <span className="text-5xl font-black text-amber-900">1</span>
             </div>
           </div>
         )}
 
-        {/* 3rd Place */}
+        {/* 1st Place Podium (Winner - Tallest) */}
+        {first && (
+          <div className="w-40 sm:w-56 flex flex-col items-center">
+            {/* Avatar with Crown and Trophy */}
+            <div className="relative mb-0 flex items-center justify-center">
+              <div className="absolute -top-7 left-1 -rotate-[18deg] z-10">
+                <DoodlCrown className="w-8 h-8 sm:w-10 sm:h-10" />
+              </div>
+              <Avatar seed={first.name || first.id} size={76} isHost={false} />
+              <div className="absolute -top-2 -right-8 sm:-right-10 rotate-[14deg] z-10">
+                <DoodlTrophy className="w-10 h-10 sm:w-12 sm:h-12" />
+              </div>
+            </div>
+
+            {/* Outlined Podium Box */}
+            <div className="w-full h-36 sm:h-44 border-2 border-[#fbc531] rounded-t-xl relative bg-black/10">
+              <span className="absolute top-2 left-3 font-bold text-lg sm:text-xl text-[#fbc531]">
+                #1
+              </span>
+              <div className="flex flex-col items-center justify-center h-full pt-4 px-2">
+                <span className="font-bold text-base sm:text-lg text-[#fbc531] truncate max-w-[150px]">
+                  {first.name}
+                </span>
+                <span className="text-xs sm:text-sm text-[#fbc531] font-normal mt-0.5">
+                  {firstScore} points
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3rd Place Podium (Right - if 3+ players) */}
         {third && (
-          <div className="flex-1 flex flex-col items-center">
-            <Avatar seed={third.id} size={48} />
-            <span className="font-bold text-sm text-zinc-300 mt-1 truncate max-w-[100px]">
-              {third.name}
-            </span>
-            <span className="text-xs text-zinc-400 font-semibold mb-2">
-              {finalScores?.[third.id] ?? third.score} pts
-            </span>
-            <div className="w-full h-20 bg-[#d97706] border-3 border-[#78350f] rounded-t-2xl flex items-center justify-center shadow-lg">
-              <span className="text-3xl font-black text-amber-950">3</span>
+          <div className="w-36 sm:w-48 flex flex-col items-center">
+            {/* Avatar */}
+            <div className="relative mb-0 flex items-center justify-center">
+              <Avatar seed={third.name || third.id} size={56} isHost={false} />
+            </div>
+
+            {/* Outlined Podium Box */}
+            <div className="w-full h-20 sm:h-24 border-2 border-amber-600 rounded-t-xl relative bg-black/10">
+              <span className="absolute top-2 left-3 font-bold text-lg sm:text-xl text-amber-600">
+                #3
+              </span>
+              <div className="flex flex-col items-center justify-center h-full pt-3 px-2">
+                <span className="font-bold text-sm sm:text-base text-white truncate max-w-[130px]">
+                  {third.name}
+                </span>
+                <span className="text-xs sm:text-sm text-amber-500 font-normal mt-0.5">
+                  {thirdScore} points
+                </span>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-4">
+      {/* 3. Action Buttons */}
+      <div className="flex items-center gap-4 mt-2">
         {isHost ? (
           <button
             onClick={onPlayAgain}
-            className="skribbl-btn-green px-8 py-3 text-lg font-black uppercase tracking-wider rounded-2xl flex items-center gap-2 cursor-pointer"
+            className="skribbl-btn-green px-8 py-3 text-lg font-black uppercase tracking-wider rounded-2xl flex items-center gap-2 cursor-pointer shadow-lg"
           >
             <RotateCcw className="w-5 h-5" />
-            Play Again
+            <span>Play Again</span>
           </button>
         ) : (
           <p className="text-sm text-zinc-400 font-semibold">
@@ -142,10 +177,10 @@ export function GamePodium({
 
         <button
           onClick={onLeaveRoom}
-          className="skribbl-btn-red px-6 py-3 text-base font-bold uppercase tracking-wider rounded-2xl flex items-center gap-2 cursor-pointer"
+          className="skribbl-btn-blue px-6 py-3 text-base font-bold uppercase tracking-wider rounded-2xl flex items-center gap-2 cursor-pointer shadow-lg"
         >
           <LogOut className="w-4 h-4" />
-          Leave
+          <span>Leave Room</span>
         </button>
       </div>
     </div>

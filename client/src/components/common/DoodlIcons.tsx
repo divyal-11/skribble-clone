@@ -121,3 +121,21 @@ export function DoodlPencil({ className = "w-4 h-4" }: IconProps) {
     </svg>
   );
 }
+
+// 🏆 Gold Trophy: Skribbl-authentic winner trophy
+export function DoodlTrophy({ className = "w-10 h-10" }: IconProps) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" className={`drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] ${className}`}>
+      {/* Cup bowl */}
+      <path d="M7 6 h18 v8 c0 5 -3 9 -9 9 c-6 0 -9 -4 -9 -9 Z" fill="#facc15" stroke="#040a33" strokeWidth="2.5" strokeLinejoin="round" />
+      {/* Handles */}
+      <path d="M7 8 H4 c-1.5 0 -2.5 1.5 -2.5 3 c0 3 2 5 5.5 5.5" stroke="#040a33" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M25 8 h3 c1.5 0 2.5 1.5 2.5 3 c0 3 -2 5 -5.5 5.5" stroke="#040a33" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Stem & Base */}
+      <path d="M16 23 v4" stroke="#040a33" strokeWidth="3" strokeLinecap="round" />
+      <path d="M10 27 h12" stroke="#040a33" strokeWidth="3" strokeLinecap="round" />
+      <rect x="9" y="27" width="14" height="3" rx="1" fill="#f59e0b" stroke="#040a33" strokeWidth="2" />
+    </svg>
+  );
+}
+
