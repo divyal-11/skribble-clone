@@ -86,10 +86,15 @@ Engineered from the ground up for low-latency vector stroke streaming, resilienc
 - Late joiners or page-refreshing players receive the entire drawing history in a single `canvasSync` packet for instantaneous canvas hydration.
 - The stroke log is automatically bounded by the turn lifecycle and purged via `clearRoomStrokes` upon turn completion.
 
-### 3. Server-Authoritative Anti-Cheat Engine
+### 3. Server-Authoritative Anti-Cheat & Dynamic Word Masking
 - **Zero-Trust Information Asymmetry**: The secret word is never transmitted to non-drawers over the network until the turn ends.
-- **Progressive Letter Hints**: At 50% and 75% elapsed turn time, the server randomly unveils unrevealed letter positions and broadcasts masked strings (e.g., `_ O _ _ E`), preserving spaces and punctuation.
+- **Space & Hyphen Preserving Word Masking**: Blanks preserve punctuation and spaces (e.g. `_ _ _ _ _` for single words, `_ _ _   _ _ _` for compound phrases, or `_ _ - _ _` for hyphenated words).
+- **Progressive Letter Hints**: At 50% and 75% elapsed turn time, the server randomly unveils unrevealed letter positions and broadcasts masked strings (e.g., `_ O _ _ E`).
 - **Levenshtein Near-Miss Detection**: Catches typos within an edit distance of $\le 1$ (or $\le 2$ for longer words) and privately notifies the guesser (*"You are close!"*) without revealing the answer in room chat.
+- **Speed-Weighted Scoring & Drawer Bonus**: Guessers earn points proportional to speed:
+  $$\text{Points} = 100 + \left(\frac{t_{\text{remaining}}}{t_{\text{total}}}\right) \times 400$$
+  The active drawer receives a **25% bonus** for each player who successfully guesses their drawing.
+- **Turn-End Scorecard**: Intermission screen provides instant feedback with revealed words, highlighting guessers in **emerald green** with points earned and non-guessers in **rose red**.
 
 ### 4. Resilient Session Persistence & 20s Disconnect Lease
 - **Transport vs. Domain Identity Decoupling**: Sockets authenticate using a deterministic client UUID stored in `sessionStorage`, freeing domain identity from transient `socket.id` churn.
@@ -97,7 +102,9 @@ Engineered from the ground up for low-latency vector stroke streaming, resilienc
 - **Deterministic Host Election**: If the room host leaves or their 20s lease expires, host status migrates seamlessly to the next connected player.
 
 ### 5. Configurable Multi-Team Mode (2–4 Teams)
-* **Cooperative Party Play**: Enables 2, 3, or 4 distinct teams (**Red**, **Blue**, **Green**, **Yellow**), expanding doodl.io from free-for-all into collaborative squad matches.
+* **Cooperative Squad Matches**: Enables 2, 3, or 4 distinct teams (**Red**, **Blue**, **Green**, **Yellow**), expanding doodl.io from free-for-all into collaborative squad matches.
+* **Host Blue Team Auto-Assignment**: When the host enables Team Mode, they are automatically placed in the Blue Team. If the room switches back to Normal mode, team assignments are cleared cleanly.
+* **Dynamic Team Invite Links**: Dedicated copy-paste invite links (`?room=XYZ&team=red`, `?room=XYZ&team=blue`) are generated specifically for the selected team count (e.g. Red & Blue for 2 Teams). The generic invite button is cleanly hidden in Team Mode.
 * **Lobby Team Cycling**: Players can cycle their team assignment with a single click on their lobby badge. The host can configure the active team count (2, 3, or 4 teams).
 * **Deterministic Server Auto-Balancing**: When `startGame` is triggered in Team Mode, the server calculates current team sizes and distributes all unassigned players across the smallest teams to ensure balanced rosters:
   ```ts
@@ -105,13 +112,20 @@ Engineered from the ground up for low-latency vector stroke streaming, resilienc
   // Iteratively assign unassigned players to the team with the minimum member count
   ```
 * **CQRS Read Projection Scoring**: Prevents distributed race conditions by maintaining player score as the single source of truth in Redis (`player.score`). Team scores are projected on-demand via `getTeamScores()` and broadcast via `teamScoresUpdate` upon every correct guess.
-* **Winning Team Podium**: When the game concludes, the 3D podium screen prominently crowns the **Winning Team** with their total score and team color theme.
-* **Automated End-to-End Verification**:
-  ```bash
-  node scripts/testTeamMode.cjs --prefix server
-  ```
 
-### 6. Edge Rate Limiting & Backpressure Regulation
+### 6. Resilient Game Loop & Disconnected Player Skip
+* **Disconnected Drawer Skip**: If a drawer disconnects during the turn order, the server-authoritative state machine validates `player.connected` at turn-transition time and seamlessly advances to the next online drawer without stalling the room.
+* **Automatic Room Pause**: If the active connected player count drops below 2 mid-game, the match automatically pauses (`roomPaused` event) and safely transitions back to `waiting` state in the lobby, preventing unplayable headless matches.
+* **Epoch-Based Server Timers**: Turn timers and intermission delays are anchored to server timestamps (`roundEndsAt`), making game pacing immune to client-side clock lag or background tab throttling.
+
+### 7. Dual-Mode Podium Engine (Solo & Team)
+* **Solo Podium with Top 3 & Remaining Table**:
+  * **Top 3 3D Pedestals**: Gold (#1 with crown and trophy), Silver (#2), and Bronze (#3) pedestals with avatars and point totals.
+  * **Remaining Rankings Table**: Players ranking #4 and below are cleanly displayed with scores in the ranked roster beneath the podium.
+* **Cooperative Team Podium**: Prominently crowns the **Winning Squad** with total combined points, team color styling, and individual contributor breakdowns.
+* **Seamless In-Game Layout**: The podium screen integrates directly into the 3-column in-game view, allowing players to celebrate in live chat and the host to trigger *Play Again* for instant rematching.
+
+### 8. Edge Rate Limiting & Backpressure Regulation
 - Per-socket in-memory token-bucket limiter protects the event loop and Redis from abusive macro drawing scripts and brute-force dictionary spam:
   - `draw`: 50 burst / 40 refill per sec
   - `guess`: 3 burst / 2 refill per sec
@@ -170,16 +184,16 @@ p99 Latency:        16 ms
 skribble-clone/
 ├── client/                     # Next.js Frontend Application
 │   ├── src/
-│   │   ├── app/                # App Router (page.tsx, layout.tsx)
+│   │   ├── app/                # App Router (page.tsx, layout.tsx, globals.css)
 │   │   ├── components/
 │   │   │   ├── canvas/         # Canvas, Toolbar, Header, Normalization Utils
-│   │   │   ├── chat/           # Chatbox, Guess stream, System alerts
-│   │   │   ├── common/         # Avatars, Custom Animated DoodlIcons, Logos
-│   │   │   ├── game/           # InGameScoreboard, TurnEndBanner, GamePodium
-│   │   │   ├── lobby/          # RoomLobby, PlayerList, LobbySettingsForm
-│   │   │   └── modals/         # WordSelectModal
-│   │   ├── hooks/              # useGameSocket (Event subscriptions & state)
-│   │   ├── lib/                # Socket client & Session Storage UUID DAL
+│   │   │   ├── chat/           # ChatBox, ChatInput, ChatMessageList
+│   │   │   ├── common/         # Avatars, Animated DoodlIcons, SkribblLogo
+│   │   │   ├── game/           # InGameScoreboard, TurnEndBanner, GamePodium, SoloPodium, TeamPodiumColumn
+│   │   │   ├── lobby/          # RoomLobby, PlayerList, LobbySettingsForm, JoinRoomCard
+│   │   │   └── modals/         # WordSelectModal, WordOptionButton, TimerProgressBar, Toast
+│   │   ├── hooks/              # useGameSocket (Event subscriptions, state machine, reconnect)
+│   │   ├── lib/                # Socket client, SoundManager, sessionStorage UUID DAL
 │   │   └── types/              # Client-side Socket event contracts
 │   └── package.json
 │
@@ -189,15 +203,20 @@ skribble-clone/
 │   │   │   ├── chat/           # Guess validation & Levenshtein near-miss logic
 │   │   │   ├── draw/           # Stroke ingestion & canvas clear dispatch
 │   │   │   ├── game/           # Word selection, Turn triggers, Game lifecycle
-│   │   │   └── room/           # Join, Leave, Disconnect lease, Team switching
-│   │   ├── lib/                # Redis connection singleton (ioredis)
-│   │   ├── services/           # RoomService, PlayerService, TimeService, TeamService
+│   │   │   └── room/           # Join, Leave, Disconnect lease, Team switching, Settings sync
+│   │   ├── lib/                # Redis client singleton, Multi-language dictionaries
+│   │   ├── services/           # RoomService, PlayerService, TimeService, TeamService, StrokeService, RateLimiter
 │   │   ├── types/              # Server-side event interfaces & payload contracts
 │   │   └── index.ts            # HTTP server, Socket.IO & Redis adapter bootstrap
 │   ├── scripts/
-│   │   └── loadTest.ts         # Multi-client automated WebSocket benchmark
+│   │   ├── loadTest.ts         # Multi-client automated WebSocket benchmark
+│   │   ├── testTeamMode.cjs    # Automated 2-4 team balancing, score projection test
+│   │   ├── testRoomSettingsAndTeams.cjs # Settings synchronization & dynamic team invite test
+│   │   └── captureFullTour.cjs # Headless screenshot automation suite
 │   └── package.json
 │
+├── docs/
+│   └── screenshots/            # High-resolution visual walkthrough assets
 └── README.md
 ```
 
@@ -257,13 +276,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. Open multip
 ## 🧪 Testing & Validation
 
 ```bash
-# Typecheck client
+# 1. Typecheck client
 npm run build --prefix client
 
-# Typecheck and build server
+# 2. Typecheck and build server
 npm run build --prefix server
 
-# Execute automated multi-room WebSocket benchmark
+# 3. Test Room Settings & Dynamic Team Invite Links
+node scripts/testRoomSettingsAndTeams.cjs --prefix server
+
+# 4. Test Multi-Team Mode (2-4 Teams, Auto-Balancing, Squad Scores)
+node scripts/testTeamMode.cjs --prefix server
+
+# 5. Execute automated multi-room WebSocket benchmark
 npm run benchmark --prefix server
 ```
 
