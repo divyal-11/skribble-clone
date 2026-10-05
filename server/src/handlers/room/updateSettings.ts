@@ -7,6 +7,8 @@ import {
 } from "../../types/events.js";
 import { getRoom, ROOM_TTL } from "../../services/roomService.js";
 import { redis } from "../../lib/redis.js";
+import { setPlayerTeam } from "../../services/teamService.js";
+import { getRoomPlayers } from "../../services/playerService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -49,6 +51,27 @@ export function handleUpdateSettings(io: AppServer, socket: AppSocket) {
     if (Object.keys(patch).length > 0) {
       await redis.hset(`room:${cleanRoomId}`, patch);
       await redis.expire(`room:${cleanRoomId}`, ROOM_TTL);
+
+      if (settings.gameMode === "Team") {
+        const players = await getRoomPlayers(cleanRoomId);
+        const hostPlayer = players.find((p) => p.id === room.hostId);
+        if (hostPlayer && !hostPlayer.teamId) {
+          await setPlayerTeam(cleanRoomId, room.hostId, "blue");
+          io.to(cleanRoomId).emit("teamUpdated", { playerId: room.hostId, teamId: "blue" });
+        }
+      } else if (settings.gameMode === "Normal") {
+        const playersKey = `room:${cleanRoomId}:players`;
+        const rawPlayers = await redis.hgetall(playersKey);
+        for (const [pid, raw] of Object.entries(rawPlayers)) {
+          const p = JSON.parse(raw);
+          if (p.teamId) {
+            delete p.teamId;
+            await redis.hset(playersKey, pid, JSON.stringify(p));
+          }
+        }
+        const refreshed = await getRoomPlayers(cleanRoomId);
+        io.to(cleanRoomId).emit("playerListUpdate", { players: refreshed });
+      }
     }
 
     // Save custom words to wordpack set if provided

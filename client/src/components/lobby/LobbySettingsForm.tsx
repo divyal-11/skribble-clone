@@ -69,7 +69,7 @@ export function LobbySettingsForm({
       label: "Rounds",
       Icon: DoodlRounds,
       value: settings.rounds,
-      options: [2, 3, 4, 5, 6, 7, 8, 9, 10],
+      options: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       onChange: (v: string) => update({ rounds: Number(v) }),
     },
     {

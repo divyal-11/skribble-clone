@@ -23,12 +23,15 @@ export default function Home() {
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
   const [inviteTeam, setInviteTeam] = useState<TeamId | null>(null);
+  const [viewPodium, setViewPodium] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get("room");
       const teamParam = params.get("team");
+      const vpParam = params.get("viewPodium");
+      if (vpParam) setViewPodium(vpParam);
 
       if (teamParam && ["red", "blue", "green", "yellow"].includes(teamParam.toLowerCase())) {
         setInviteTeam(teamParam.toLowerCase() as TeamId);
@@ -114,7 +117,71 @@ export default function Home() {
 
       {notification && <Toast notification={notification} />}
 
-      {!currentRoom ? (
+      {viewPodium ? (
+        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+          <div className="lg:col-span-3 order-2 lg:order-1 w-full">
+            <InGameScoreboard
+              players={viewPodium === "team" ? [
+                { id: "1", name: "CaptainDoodl", score: 1450, hasGuessed: true, connected: true, teamId: "blue" },
+                { id: "2", name: "PixelArt", score: 1100, hasGuessed: true, connected: true, teamId: "blue" },
+                { id: "3", name: "BrushMaster", score: 1250, hasGuessed: true, connected: true, teamId: "red" },
+                { id: "4", name: "Challenger", score: 750, hasGuessed: false, connected: true, teamId: "red" },
+              ] : [
+                { id: "1", name: "CaptainDoodl", score: 1850, hasGuessed: true, connected: true },
+                { id: "2", name: "PixelArt", score: 1420, hasGuessed: true, connected: true },
+                { id: "3", name: "BrushMaster", score: 980, hasGuessed: true, connected: true },
+                { id: "4", name: "Challenger", score: 540, hasGuessed: false, connected: true },
+              ]}
+              myPlayerId="1"
+              hostId="1"
+              currentDrawerId={null}
+              teamScores={viewPodium === "team" ? { blue: 2550, red: 2000 } : {}}
+            />
+          </div>
+          <div className="lg:col-span-6 xl:col-span-6 order-1 lg:order-2 w-full">
+            <GamePodium
+              players={viewPodium === "team" ? [
+                { id: "1", name: "CaptainDoodl", score: 1450, hasGuessed: true, connected: true, teamId: "blue" },
+                { id: "2", name: "PixelArt", score: 1100, hasGuessed: true, connected: true, teamId: "blue" },
+                { id: "3", name: "BrushMaster", score: 1250, hasGuessed: true, connected: true, teamId: "red" },
+                { id: "4", name: "Challenger", score: 750, hasGuessed: false, connected: true, teamId: "red" },
+              ] : [
+                { id: "1", name: "CaptainDoodl", score: 1850, hasGuessed: true, connected: true },
+                { id: "2", name: "PixelArt", score: 1420, hasGuessed: true, connected: true },
+                { id: "3", name: "BrushMaster", score: 980, hasGuessed: true, connected: true },
+                { id: "4", name: "Challenger", score: 540, hasGuessed: false, connected: true },
+              ]}
+              finalScores={viewPodium === "team" ? { "1": 1450, "2": 1100, "3": 1250, "4": 750 } : { "1": 1850, "2": 1420, "3": 980, "4": 540 }}
+              teamScores={viewPodium === "team" ? { blue: 2550, red: 2000 } : {}}
+              playersByTeam={viewPodium === "team" ? {
+                blue: [
+                  { id: "1", name: "CaptainDoodl", score: 1450, hasGuessed: true, connected: true, teamId: "blue" },
+                  { id: "2", name: "PixelArt", score: 1100, hasGuessed: true, connected: true, teamId: "blue" },
+                ],
+                red: [
+                  { id: "3", name: "BrushMaster", score: 1250, hasGuessed: true, connected: true, teamId: "red" },
+                  { id: "4", name: "Challenger", score: 750, hasGuessed: false, connected: true, teamId: "red" },
+                ],
+              } : {}}
+              isHost={true}
+              onPlayAgain={() => {}}
+              onLeaveRoom={() => {}}
+            />
+          </div>
+          <div className="lg:col-span-3 xl:col-span-3 order-3 w-full h-full min-h-[450px]">
+            <ChatBox
+              messages={[
+                { senderId: "sys", senderName: "System", text: "Match finished! Excellent drawings!", type: "info" },
+                { senderId: "1", senderName: "CaptainDoodl", text: "GG everyone!", type: "chat" },
+                { senderId: "2", senderName: "PixelArt", text: "That was so close haha", type: "chat" },
+              ]}
+              onSendMessage={() => {}}
+              isDrawer={false}
+              hasGuessed={false}
+            />
+          </div>
+        </div>
+      ) : !currentRoom ? (
         <JoinRoomCard
           playerName={playerName}
           setPlayerName={setPlayerName}

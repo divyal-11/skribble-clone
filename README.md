@@ -19,22 +19,39 @@ Engineered from the ground up for low-latency vector stroke streaming, resilienc
 * **Interactive Player Identity**: Animated cartoon avatars with live randomization, language selector, and tab-isolated UUID sessions.
 * **Instant Join & Code Validation**: One-click room creation or direct 6-character room code joining with automatic capitalization.
 
-### 2. Interactive 3-Column Room Lobby
+### 2. Interactive 3-Column Room Lobby (Multi-Team Mode)
 ![Room Lobby](./docs/screenshots/02_room_lobby.png)
-* **Live Roster & Team Badges**: Real-time player list featuring animated join toasts, host crown indicator, and configurable team color badges (Red/Blue/Green/Yellow) with one-click team cycling.
-* **Host Match Configuration**: Granular controls for draw time (15s–240s), rounds (2–10), game mode (Normal vs. 2–4 Teams), word count, progressive hints, and custom comma-separated wordpacks.
-* **Room Code & Invite Sharing**: Instant one-click clipboard link sharing (`?room=CODE`) and pre-game lobby chat.
+* **Live Roster & Team Badges**: Host automatically assigned to Blue Team in team mode, live player roster with team color badges (Red/Blue/Green/Yellow).
+* **Dynamic Team Invite Links**: Dedicated copy-paste invite links generated specifically for the selected team count (e.g. Red & Blue for 2 Teams). The generic invite button is cleanly hidden in Team Mode.
+* **Host Match Configuration**: Granular controls for draw time (15s–240s), rounds (1–10), game mode (Normal vs. 2–4 Teams), word count, progressive hints, and custom comma-separated wordpacks.
 
-### 3. Word Selection & Turn Intermission
-![Word Choosing State](./docs/screenshots/03_word_choosing.png)
-* **Anti-Cheat Information Asymmetry**: While the active drawer selects a secret word, guessers receive a masked canvas overlay with synchronized countdowns.
-* **Live Team Scoreboard**: Displays aggregate team score headers (`Red 0 pts | Blue 0 pts`) and flags the active drawer with an animated pencil indicator.
+### 3. Word Selection & Anti-Cheat Overlay
+![Word Selection State](./docs/screenshots/03_word_selection.png)
+* **Secret Word Choices**: Active drawer selects from 3 difficulty options with character count indicators and countdown timer.
+* **Anti-Cheat Information Asymmetry**: While the active drawer selects a secret word, guessers receive a masked canvas overlay with synchronized countdowns; the secret word is never transmitted over the network to non-drawers.
 
 ### 4. Real-Time 3-Column Active Gameplay
 ![Active Gameplay](./docs/screenshots/04_active_gameplay.png)
-* **Pure White Vector Canvas**: High-contrast drawing sheet supporting normalized float coordinates (`[0, 1]`) with zero viewport distortion across devices.
-* **Live In-Game Scoreboard**: Real-time player ranking sorted by score, active drawer badges, and instantaneous green *"Guessed!"* highlights on correct guesses.
-* **Levenshtein Near-Miss Detection**: Real-time guess box on the right displaying private typo alerts (*"applle" is very close!*) without leaking words in public chat.
+* **Pure White Vector Canvas**: High-contrast drawing sheet supporting normalized float coordinates (`[0, 1]`) with sub-50ms stroke replication.
+* **Masked Word Spacing**: Server-authoritative word masking preserving word spaces and punctuation (e.g. `_ _ _ _ _`).
+* **Levenshtein Near-Miss Detection**: Real-time guess box on the right displaying private typo whispers (*"applle" is very close!*) without leaking words in public chat.
+* **Live Team Scoreboard**: Live team point headers (`Red 0 pts | Blue 0 pts`) and drawer pencil indicators.
+
+### 5. Turn-End Scorecard & Word Reveal
+![Turn-End Scorecard](./docs/screenshots/05_turn_end_scorecard.png)
+* **Word Reveal & Reason**: Displays the revealed secret word and reason (*"Everyone guessed the word!"* or *"Time's up!"*).
+* **Guesser Feedback Coloring**: Highlights players who guessed the word in emerald green (`+475 pts`) and non-guessers in rose red (`+0 pts`).
+
+### 6. Solo Podium (Top 3 Pedestals + Remaining Rankings)
+![Solo Podium](./docs/screenshots/06_solo_podium.png)
+* **Top 3 3D Pedestals**: Gold (#1 with crown and trophy), Silver (#2), and Bronze (#3) pedestals with avatars and point totals.
+* **Remaining Players Table**: Players ranking #4 and below are cleanly displayed with scores in the ranked roster beneath the podium.
+* **Match Actions**: Instant *Play Again* and *Leave Room* options.
+
+### 7. Cooperative Team Podium
+![Team Podium](./docs/screenshots/07_team_podium.png)
+* **Winning Team Crown**: Crowning banner (*"Blue Team Wins the Race!"*) with total aggregated squad scores.
+* **Team Roster Breakdown**: Player contributions broken down by team with individual point values.
 
 ---
 
