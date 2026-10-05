@@ -55,7 +55,8 @@ export async function addPlayerToRoom(
       ...existing,
       connected: true,
       name: player.name || existing.name,
-    }
+      teamId: player.teamId || existing.teamId,
+    };
     console.log(`🔄 Preserved existing score (${existing.score} pts) for reconnecting player ${player.id}`);    
   }
 

@@ -84,13 +84,15 @@ export function handleGuess(io:AppServer,socket:AppSocket){
             type: "correct",
         });
         
+        const teamScores = await getTeamScores(cleanRoomId);
+
         //broadcast updated scoreboard
         io.to(cleanRoomId).emit("scoreUpdate", {
           scores: updatedScores,
           guesserId: playerId,
+          teamScores,
         });
 
-        const teamScores = await getTeamScores(cleanRoomId);
         if (Object.keys(teamScores).length > 0) {
           io.to(cleanRoomId).emit("teamScoresUpdate", { scores: teamScores });
         }

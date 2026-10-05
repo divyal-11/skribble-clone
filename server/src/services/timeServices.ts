@@ -3,6 +3,7 @@ import {
   ClientToServerEvents,
   ServerToClientEvents,
   SocketData,
+  Player,
 } from "../types/events.js";
 import { getRoom } from "./roomService.js";
 import { getRoomPlayers, resetPlayerGuessed } from "./playerService.js";
@@ -10,6 +11,7 @@ import { advanceTurnInRoom } from "./turnService.js";
 import { clearRoomStrokes } from "./strokeService.js";
 import { maskWord } from "../lib/words.js";
 import { getWordOptionsForRoom } from "./wordService.js";
+import { getTeamScores } from "./teamService.js";
 import { redis } from "../lib/redis.js";
 
 
@@ -190,8 +192,21 @@ async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void
     const finalPlayers = await getRoomPlayers(roomId);
     const finalScores: Record<string, number> = {};
     finalPlayers.forEach((p) => { finalScores[p.id] = p.score; });
-    io.to(roomId).emit("gameEnded", { finalScores });
-    console.log(`🏆 Game ended in room ${roomId}! Final scores:`, finalScores);
+    const teamScores = await getTeamScores(roomId);
+
+    // Group players by team sorted descending by individual score
+    const playersByTeam: Record<string, Player[]> = {};
+    finalPlayers.forEach((p) => {
+      const key = p.teamId || "unassigned";
+      if (!playersByTeam[key]) playersByTeam[key] = [];
+      playersByTeam[key].push(p);
+    });
+    for (const team of Object.keys(playersByTeam)) {
+      playersByTeam[team].sort((a, b) => b.score - a.score);
+    }
+
+    io.to(roomId).emit("gameEnded", { finalScores, teamScores, playersByTeam });
+    console.log(`🏆 Game ended in room ${roomId}! Final scores:`, finalScores, "Team scores:", teamScores);
     return;
   }
 

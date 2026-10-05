@@ -15,16 +15,24 @@ import {
   GamePodium
 } from "@/components";
 import { InGameScoreboard } from "@/components/game/InGameScoreboard";
+import { TeamId } from "@/types/events";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
   const [roomInput, setRoomInput] = useState("");
   const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
+  const [inviteTeam, setInviteTeam] = useState<TeamId | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get("room");
+      const teamParam = params.get("team");
+
+      if (teamParam && ["red", "blue", "green", "yellow"].includes(teamParam.toLowerCase())) {
+        setInviteTeam(teamParam.toLowerCase() as TeamId);
+      }
+
       if (roomParam) {
         setInviteRoomCode(roomParam.toUpperCase());
         setRoomInput(roomParam.toUpperCase());
@@ -63,6 +71,7 @@ export default function Home() {
     finalScores,
     switchTeam,
     teamScores,
+    playersByTeam,
     turnScores,
     turnEndReason,
   } = useGameSocket();
@@ -77,11 +86,12 @@ export default function Home() {
     if (!playerName.trim()) return alert("Please enter your Name first");
     const targetRoom = (inviteRoomCode || roomInput).trim().toUpperCase();
     if (!targetRoom) return alert("Please enter room code");
-    joinRoom(targetRoom, playerName.trim());
+    joinRoom(targetRoom, playerName.trim(), inviteTeam);
   };
 
   const handleClearInvite = () => {
     setInviteRoomCode(null);
+    setInviteTeam(null);
     setRoomInput("");
     if (typeof window !== "undefined") {
       window.history.replaceState({}, "", window.location.pathname);
@@ -111,6 +121,7 @@ export default function Home() {
           onJoinRoom={handleJoinRoom}
           isConnected={isConnected}
           inviteRoomCode={inviteRoomCode}
+          inviteTeam={inviteTeam}
           onClearInvite={handleClearInvite}
         />
       ) : isGameOver ? (
@@ -133,6 +144,7 @@ export default function Home() {
               players={players}
               finalScores={finalScores}
               teamScores={teamScores}
+              playersByTeam={playersByTeam}
               isHost={myPlayerId === hostId}
               onPlayAgain={startGame}
               onLeaveRoom={leaveRoom}

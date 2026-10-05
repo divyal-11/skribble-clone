@@ -42,11 +42,14 @@ export function RoomLobby({
     customWordsOnly: false,
   });
 
-  const handleInvite = () => {
+  const handleInvite = (team?: string) => {
     if (typeof window !== "undefined") {
-      const inviteUrl = `${window.location.origin}?room=${roomId}`;
+      const inviteUrl = team
+        ? `${window.location.origin}?room=${roomId}&team=${team}`
+        : `${window.location.origin}?room=${roomId}`;
       navigator.clipboard.writeText(inviteUrl);
-      alert(`Invite link copied to clipboard!\n${inviteUrl}`);
+      const teamLabel = team ? ` (${team.toUpperCase()} TEAM)` : "";
+      alert(`Invite link${teamLabel} copied to clipboard!\n${inviteUrl}`);
     }
   };
 

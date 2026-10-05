@@ -4,6 +4,7 @@ import {
   ServerToClientEvents,
   SocketData,
   Player,
+  TeamId,
 } from "../../types/events.js";
 import { addPlayerToRoom } from "../../services/playerService.js";
 import { getRoomStrokes } from "../../services/strokeService.js";
@@ -18,15 +19,21 @@ type AppSocket = Socket<
   SocketData
 >;
 
+const VALID_TEAMS: TeamId[] = ["red", "blue", "green", "yellow"];
+
 export function handleJoinRoom(socket: AppSocket) {
   const playerId = socket.data.playerId;
 
-  socket.on("joinRoom", async ({ roomId, playerName }) => {
+  socket.on("joinRoom", async ({ roomId, playerName, teamId }) => {
     const cleanRoomId = roomId.trim().toUpperCase();
     const cleanPlayerName = playerName.trim() || "Anonymous";
 
     // 1. Cancel any disconnect grace period if reconnecting
     cancelDisconnectGracePeriod(playerId);
+
+    const cleanTeamId = teamId && VALID_TEAMS.includes(teamId.toLowerCase() as TeamId)
+      ? (teamId.toLowerCase() as TeamId)
+      : undefined;
 
     const player: Player = {
       id: playerId,
@@ -34,6 +41,7 @@ export function handleJoinRoom(socket: AppSocket) {
       score: 0,
       hasGuessed: false,
       connected: true,
+      teamId: cleanTeamId,
     };
 
     const { room, players,isReconnect } = await addPlayerToRoom(cleanRoomId, player);

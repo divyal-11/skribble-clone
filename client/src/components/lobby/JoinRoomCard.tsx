@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Shuffle, ArrowLeft, ArrowRight, Play, LogIn } from "lucide-react";
+import { Shuffle, ArrowLeft, ArrowRight, Play, LogIn, Users } from "lucide-react";
 import { Avatar } from "../common/Avatar";
 
 interface JoinRoomCardProps {
@@ -11,8 +11,16 @@ interface JoinRoomCardProps {
   onJoinRoom: (e: React.FormEvent) => void;
   isConnected: boolean;
   inviteRoomCode?: string | null;
+  inviteTeam?: string | null;
   onClearInvite?: () => void;
 }
+
+const TEAM_INVITE_CONFIG: Record<string, { label: string; badgeClass: string }> = {
+  red: { label: "Red Team", badgeClass: "bg-red-500/20 text-red-300 border-red-500/80" },
+  blue: { label: "Blue Team", badgeClass: "bg-blue-500/20 text-blue-300 border-blue-500/80" },
+  green: { label: "Green Team", badgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/80" },
+  yellow: { label: "Yellow Team", badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/80" },
+};
 
 export function JoinRoomCard({
   playerName,
@@ -23,6 +31,7 @@ export function JoinRoomCard({
   onJoinRoom,
   isConnected,
   inviteRoomCode,
+  inviteTeam,
   onClearInvite,
 }: JoinRoomCardProps) {
   const [avatarIndex, setAvatarIndex] = useState(0);
@@ -94,6 +103,13 @@ export function JoinRoomCard({
       {/* 3. Action Section: Invite Mode vs Standard Mode */}
       {inviteRoomCode ? (
         <div className="flex flex-col gap-2.5">
+          {inviteTeam && TEAM_INVITE_CONFIG[inviteTeam.toLowerCase()] && (
+            <div className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border text-xs font-black uppercase tracking-wider ${TEAM_INVITE_CONFIG[inviteTeam.toLowerCase()].badgeClass}`}>
+              <Users className="w-3.5 h-3.5" />
+              <span>Joining {TEAM_INVITE_CONFIG[inviteTeam.toLowerCase()].label}</span>
+            </div>
+          )}
+
           {/* Big Green Play! Button */}
           <button
             type="button"

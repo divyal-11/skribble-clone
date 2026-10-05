@@ -1,4 +1,4 @@
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, Users } from "lucide-react";
 import { RoomSettings } from "@/types/events";
 import {
   DoodlPlayers,
@@ -16,7 +16,7 @@ interface LobbySettingsFormProps {
   isHost: boolean;
   canStart: boolean;
   onStart: () => void;
-  onInvite: () => void;
+  onInvite: (team?: string) => void;
 }
 
 export function LobbySettingsForm({
@@ -175,12 +175,53 @@ export function LobbySettingsForm({
         )}
 
         <button
-          onClick={onInvite}
+          onClick={() => onInvite()}
           className="skribbl-btn-blue w-[30%] py-2.5 rounded font-black text-lg uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <img src="/img/link.svg" alt="link" className="w-4 h-4 invert" />
           <span>Invite</span>
         </button>
+      </div>
+
+      {/* Team-Specific Invite Links */}
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-white/10 mt-1">
+        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
+          Team Invite Links:
+        </span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            onClick={() => onInvite("red")}
+            className="px-2 py-1.5 bg-red-600/20 hover:bg-red-600/35 border border-red-500/80 rounded text-xs font-bold text-red-200 flex items-center justify-center gap-1 cursor-pointer transition"
+          >
+            <Users className="w-3.5 h-3.5 text-red-400" />
+            <span>Red Team</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onInvite("blue")}
+            className="px-2 py-1.5 bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/80 rounded text-xs font-bold text-blue-200 flex items-center justify-center gap-1 cursor-pointer transition"
+          >
+            <Users className="w-3.5 h-3.5 text-blue-400" />
+            <span>Blue Team</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onInvite("green")}
+            className="px-2 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/80 rounded text-xs font-bold text-emerald-200 flex items-center justify-center gap-1 cursor-pointer transition"
+          >
+            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Green Team</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onInvite("yellow")}
+            className="px-2 py-1.5 bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/80 rounded text-xs font-bold text-amber-200 flex items-center justify-center gap-1 cursor-pointer transition"
+          >
+            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <span>Yellow Team</span>
+          </button>
+        </div>
       </div>
     </div>
   );

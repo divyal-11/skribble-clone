@@ -28,6 +28,7 @@ export function useGameSocket() {
     null,
   );
   const [teamScores, setTeamScores] = useState<Record<string, number>>({});
+  const [playersByTeam, setPlayersByTeam] = useState<Record<string, Player[]>>({});
   const [turnScores, setTurnScores] = useState<Record<string, number>>({});
   const [turnEndReason, setTurnEndReason] = useState<string>("Everyone guessed the word!");
 
@@ -67,11 +68,12 @@ export function useGameSocket() {
       // Auto-rejoin room if refreshing an active game
       const savedRoom = sessionStorage.getItem("doodl_room");
       const savedName = sessionStorage.getItem("doodl_name");
+      const savedTeam = sessionStorage.getItem("doodl_team");
       if (savedRoom && savedName) {
-        console.log(`🔄 Auto-rejoining saved room: ${savedRoom} as ${savedName}`);
-        socket.emit("joinRoom", { roomId: savedRoom, playerName: savedName });
+        console.log(`🔄 Auto-rejoining saved room: ${savedRoom} as ${savedName} (team: ${savedTeam || "none"})`);
+        socket.emit("joinRoom", { roomId: savedRoom, playerName: savedName, teamId: savedTeam });
       }
-    }
+    };
     const onDisconnect = () => setIsConnected(false);
 
     const onJoinedRoom = (data: {
@@ -176,9 +178,11 @@ export function useGameSocket() {
     const onScoreUpdate = ({
       scores,
       guesserId,
+      teamScores: updatedTeamScores,
     }: {
       scores: Record<string, number>;
       guesserId?: string;
+      teamScores?: Record<string, number>;
     }) => {
       setPlayers((prev) =>
         prev.map((p) => ({
@@ -187,6 +191,9 @@ export function useGameSocket() {
           hasGuessed: p.hasGuessed || p.id === guesserId,
         })),
       );
+      if (updatedTeamScores) {
+        setTeamScores(updatedTeamScores);
+      }
     };
 
     const onTurnEnded = (data: {
@@ -214,10 +221,22 @@ export function useGameSocket() {
       );
     };
 
-    const onGameEnded = (data: { finalScores: Record<string, number> }) => {
+    const onGameEnded = (data: {
+      finalScores: Record<string, number>;
+      teamScores?: Record<string, number>;
+      playersByTeam?: Record<string, Player[]>;
+    }) => {
       setRoomStatus("gameEnd");
       setFinalScores(data.finalScores);
+      if (data.teamScores) setTeamScores(data.teamScores);
+      if (data.playersByTeam) setPlayersByTeam(data.playersByTeam);
       setRoundEndsAt(null);
+      setPlayers((prev) =>
+        prev.map((p) => ({
+          ...p,
+          score: data.finalScores[p.id] !== undefined ? data.finalScores[p.id] : p.score,
+        }))
+      );
       soundManager.play("roundEndSuccess");
     };
 
@@ -285,16 +304,22 @@ export function useGameSocket() {
     socket.emit("joinRoom", { roomId: code, playerName });
   };
 
-  const joinRoom = (roomId: string, playerName: string) => {
+  const joinRoom = (roomId: string, playerName: string, teamId?: string | null) => {
     sessionStorage.setItem("doodl_room", roomId);
     sessionStorage.setItem("doodl_name", playerName);
-    socket.emit("joinRoom", { roomId, playerName });
+    if (teamId) {
+      sessionStorage.setItem("doodl_team", teamId);
+    } else {
+      sessionStorage.removeItem("doodl_team");
+    }
+    socket.emit("joinRoom", { roomId, playerName, teamId });
   };
 
   const leaveRoom = () => {
     // Clear storage so the user doesn't get auto-rejoined after leaving
     sessionStorage.removeItem("doodl_room");
     sessionStorage.removeItem("doodl_name");
+    sessionStorage.removeItem("doodl_team");
 
     if (currentRoom) {
       socket.emit("leaveRoom", { roomId: currentRoom });
@@ -309,6 +334,7 @@ export function useGameSocket() {
       setMessages([]);
       setRoundEndsAt(null);
       setTimeLeft(60);
+      setPlayersByTeam({});
     }
   };
 
@@ -351,6 +377,7 @@ export function useGameSocket() {
     selectWord,
     switchTeam,
     teamScores,
+    playersByTeam,
     roomStatus,
     currentDrawerId,
     choosingDrawerName,

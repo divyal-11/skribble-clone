@@ -28,7 +28,7 @@ export interface ChatMessagePayload {
 
 
 export interface ClientToServerEvents {
-  joinRoom: (payload: { roomId: string; playerName: string }) => void;
+  joinRoom: (payload: { roomId: string; playerName: string; teamId?: string | null }) => void;
   leaveRoom: (payload: { roomId: string }) => void;
   startGame: (payload: { roomId: string; settings?: RoomSettings }) => void;
   wordSelect: (payload: { roomId: string; word: string }) => void;
@@ -72,14 +72,22 @@ export interface ServerToClientEvents {
     word?: string;
   }) => void;
   hintRevealed: (payload: { maskedWord: string }) => void;
-  scoreUpdate: (payload: { scores: Record<string, number>; guesserId?: string }) => void;
+  scoreUpdate: (payload: {
+    scores: Record<string, number>;
+    guesserId?: string;
+    teamScores?: Record<string, number>;
+  }) => void;
   turnEnded: (payload: {
     word: string;
     scores: Record<string, number>;
     scoreDeltas?: Record<string, number>;
     reason?: string;
   }) => void;
-  gameEnded: (payload: { finalScores: Record<string, number> }) => void;
+  gameEnded: (payload: {
+    finalScores: Record<string, number>;
+    teamScores?: Record<string, number>;
+    playersByTeam?: Record<string, Player[]>;
+  }) => void;
   teamUpdated: (payload: { playerId: string; teamId: TeamId }) => void;
   teamScoresUpdate: (payload: { scores: Record<string, number> }) => void;
   pong: () => void;
