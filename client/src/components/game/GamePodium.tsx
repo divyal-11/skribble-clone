@@ -6,14 +6,23 @@ import { Trophy, RotateCcw, LogOut } from "lucide-react";
 interface GamePodiumProps {
   players: Player[];
   finalScores?: Record<string, number> | null;
+  teamScores?: Record<string, number>;
   isHost: boolean;
   onPlayAgain: () => void;
   onLeaveRoom: () => void;
 }
 
+const TEAM_CONFIG: Record<string, { label: string; border: string; bg: string; text: string; badgeBg: string }> = {
+  red: { label: "Red Team", border: "border-red-500", bg: "bg-red-500/15", text: "text-red-400", badgeBg: "bg-red-600" },
+  blue: { label: "Blue Team", border: "border-blue-500", bg: "bg-blue-500/15", text: "text-blue-400", badgeBg: "bg-blue-600" },
+  green: { label: "Green Team", border: "border-emerald-500", bg: "bg-emerald-500/15", text: "text-emerald-400", badgeBg: "bg-emerald-600" },
+  yellow: { label: "Yellow Team", border: "border-amber-500", bg: "bg-amber-500/15", text: "text-amber-400", badgeBg: "bg-amber-600" },
+};
+
 export function GamePodium({
   players,
   finalScores,
+  teamScores,
   isHost,
   onPlayAgain,
   onLeaveRoom,
@@ -27,14 +36,37 @@ export function GamePodium({
   const second = ranked[1];
   const third = ranked[2];
 
+  const teamEntries = teamScores && Object.keys(teamScores).length > 0
+    ? Object.entries(teamScores).sort((a, b) => b[1] - a[1])
+    : [];
+  const winningTeamEntry = teamEntries.length > 0 ? teamEntries[0] : null;
+  const winningTeam = winningTeamEntry ? TEAM_CONFIG[winningTeamEntry[0]] : null;
+
   return (
     <div className="w-full max-w-2xl bg-[#1d273f]/95 border-4 border-[#0f172a] rounded-3xl p-6 sm:p-8 flex flex-col items-center shadow-2xl text-center animate-fade-in">
-      <div className="flex items-center gap-2 text-amber-400 mb-6">
+      <div className="flex items-center gap-2 text-amber-400 mb-4">
         <Trophy className="w-8 h-8 animate-bounce" />
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-wider text-white">
           Game Over!
         </h1>
       </div>
+
+      {/* 🏆 Winning Team Banner (if Team Mode) */}
+      {winningTeam && winningTeamEntry && (
+        <div className={`w-full max-w-md p-3.5 mb-6 rounded-2xl border-2 ${winningTeam.border} ${winningTeam.bg} flex items-center justify-between shadow-lg`}>
+          <div className="flex items-center gap-2.5">
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase text-white ${winningTeam.badgeBg}`}>
+              Winning Team
+            </span>
+            <span className={`font-black text-lg ${winningTeam.text}`}>
+              {winningTeam.label}
+            </span>
+          </div>
+          <span className="font-mono font-black text-xl text-white">
+            {winningTeamEntry[1]} pts
+          </span>
+        </div>
+      )}
 
       {/* 3D Cartoon Podium (2nd | 1st | 3rd) */}
       <div className="w-full flex items-end justify-center gap-3 sm:gap-6 mb-8 pt-6 min-h-[260px]">

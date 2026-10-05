@@ -87,6 +87,7 @@ export default function Home() {
         <GamePodium
           players={players}
           finalScores={finalScores}
+          teamScores={teamScores}
           isHost={myPlayerId === hostId}
           onPlayAgain={startGame}
           onLeaveRoom={leaveRoom}

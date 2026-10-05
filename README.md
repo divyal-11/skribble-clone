@@ -80,9 +80,19 @@ Engineered from the ground up for low-latency vector stroke streaming, resilienc
 - **Deterministic Host Election**: If the room host leaves or their 20s lease expires, host status migrates seamlessly to the next connected player.
 
 ### 5. Configurable Multi-Team Mode (2–4 Teams)
-- Allows cooperative party play with **Red, Blue, Green, and Yellow** teams.
-- Features lobby team cycling, automatic lobby balancing on game start, and live team score projection banners.
-- **CQRS Read Projection**: Team scores are derived dynamically from individual player scores (`getTeamScores`), preventing distributed split-brain state desynchronization.
+* **Cooperative Party Play**: Enables 2, 3, or 4 distinct teams (**Red**, **Blue**, **Green**, **Yellow**), expanding doodl.io from free-for-all into collaborative squad matches.
+* **Lobby Team Cycling**: Players can cycle their team assignment with a single click on their lobby badge. The host can configure the active team count (2, 3, or 4 teams).
+* **Deterministic Server Auto-Balancing**: When `startGame` is triggered in Team Mode, the server calculates current team sizes and distributes all unassigned players across the smallest teams to ensure balanced rosters:
+  ```ts
+  const activeTeams: TeamId[] = (["red", "blue", "green", "yellow"] as TeamId[]).slice(0, teamCount);
+  // Iteratively assign unassigned players to the team with the minimum member count
+  ```
+* **CQRS Read Projection Scoring**: Prevents distributed race conditions by maintaining player score as the single source of truth in Redis (`player.score`). Team scores are projected on-demand via `getTeamScores()` and broadcast via `teamScoresUpdate` upon every correct guess.
+* **Winning Team Podium**: When the game concludes, the 3D podium screen prominently crowns the **Winning Team** with their total score and team color theme.
+* **Automated End-to-End Verification**:
+  ```bash
+  node scripts/testTeamMode.cjs --prefix server
+  ```
 
 ### 6. Edge Rate Limiting & Backpressure Regulation
 - Per-socket in-memory token-bucket limiter protects the event loop and Redis from abusive macro drawing scripts and brute-force dictionary spam:
