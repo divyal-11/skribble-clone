@@ -19,6 +19,13 @@ interface LobbySettingsFormProps {
   onInvite: (team?: string) => void;
 }
 
+const ALL_TEAMS = [
+  { key: "red", label: "Red Team", bg: "bg-red-600/20 hover:bg-red-600/35", border: "border-red-500/80", text: "text-red-200", icon: "text-red-400" },
+  { key: "blue", label: "Blue Team", bg: "bg-blue-600/20 hover:bg-blue-600/35", border: "border-blue-500/80", text: "text-blue-200", icon: "text-blue-400" },
+  { key: "green", label: "Green Team", bg: "bg-emerald-600/20 hover:bg-emerald-600/35", border: "border-emerald-500/80", text: "text-emerald-200", icon: "text-emerald-400" },
+  { key: "yellow", label: "Yellow Team", bg: "bg-amber-600/20 hover:bg-amber-600/35", border: "border-amber-500/80", text: "text-amber-200", icon: "text-amber-400" },
+];
+
 export function LobbySettingsForm({
   settings,
   onChange,
@@ -27,6 +34,10 @@ export function LobbySettingsForm({
   onStart,
   onInvite,
 }: LobbySettingsFormProps) {
+  const isTeamMode = settings.gameMode === "Team";
+  const activeTeamCount = settings.teamCount || 2;
+  const visibleTeams = ALL_TEAMS.slice(0, Math.min(Math.max(activeTeamCount, 2), 4));
+
   const update = (patch: Partial<RoomSettings>) => {
     if (!isHost) return;
     onChange({ ...settings, ...patch });
@@ -156,73 +167,70 @@ export function LobbySettingsForm({
         />
       </div>
 
-      {/* Host Controls: Start (70%) & Invite (30%) */}
+      {/* Host Controls: Start (Full width in Team mode, 70% in normal mode) & Invite (only in normal mode) */}
       <div className="flex items-center gap-2 pt-2">
         {isHost ? (
           <button
             onClick={onStart}
             disabled={!canStart}
-            className={`skribbl-btn-green w-[70%] py-2.5 rounded font-black text-lg uppercase tracking-wider text-black transition ${
+            className={`skribbl-btn-green ${
+              isTeamMode ? "w-full" : "w-[70%]"
+            } py-2.5 rounded font-black text-lg uppercase tracking-wider text-black transition ${
               canStart ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
             }`}
           >
             Start!
           </button>
         ) : (
-          <div className="w-[70%] py-2.5 text-center text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded">
+          <div
+            className={`${
+              isTeamMode ? "w-full" : "w-[70%]"
+            } py-2.5 text-center text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded`}
+          >
             Waiting for host to start...
           </div>
         )}
 
-        <button
-          onClick={() => onInvite()}
-          className="skribbl-btn-blue w-[30%] py-2.5 rounded font-black text-lg uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition cursor-pointer"
-        >
-          <img src="/img/link.svg" alt="link" className="w-4 h-4 invert" />
-          <span>Invite</span>
-        </button>
+        {!isTeamMode && (
+          <button
+            onClick={() => onInvite()}
+            className="skribbl-btn-blue w-[30%] py-2.5 rounded font-black text-lg uppercase tracking-wider text-white flex items-center justify-center gap-1.5 transition cursor-pointer"
+          >
+            <img src="/img/link.svg" alt="link" className="w-4 h-4 invert" />
+            <span>Invite</span>
+          </button>
+        )}
       </div>
 
-      {/* Team-Specific Invite Links */}
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-white/10 mt-1">
-        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
-          Team Invite Links:
-        </span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-          <button
-            type="button"
-            onClick={() => onInvite("red")}
-            className="px-2 py-1.5 bg-red-600/20 hover:bg-red-600/35 border border-red-500/80 rounded text-xs font-bold text-red-200 flex items-center justify-center gap-1 cursor-pointer transition"
+      {/* Team-Specific Invite Links: Render ONLY when Team mode is chosen, showing only selected teamCount */}
+      {isTeamMode && (
+        <div className="flex flex-col gap-1.5 pt-2 border-t border-white/10 mt-1">
+          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
+            Team Invite Links ({visibleTeams.length} Teams):
+          </span>
+          <div
+            className={`grid gap-1.5 ${
+              visibleTeams.length === 2
+                ? "grid-cols-2"
+                : visibleTeams.length === 3
+                ? "grid-cols-3"
+                : "grid-cols-2 sm:grid-cols-4"
+            }`}
           >
-            <Users className="w-3.5 h-3.5 text-red-400" />
-            <span>Red Team</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onInvite("blue")}
-            className="px-2 py-1.5 bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/80 rounded text-xs font-bold text-blue-200 flex items-center justify-center gap-1 cursor-pointer transition"
-          >
-            <Users className="w-3.5 h-3.5 text-blue-400" />
-            <span>Blue Team</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onInvite("green")}
-            className="px-2 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/80 rounded text-xs font-bold text-emerald-200 flex items-center justify-center gap-1 cursor-pointer transition"
-          >
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Green Team</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onInvite("yellow")}
-            className="px-2 py-1.5 bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/80 rounded text-xs font-bold text-amber-200 flex items-center justify-center gap-1 cursor-pointer transition"
-          >
-            <Users className="w-3.5 h-3.5 text-amber-400" />
-            <span>Yellow Team</span>
-          </button>
+            {visibleTeams.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => onInvite(t.key)}
+                className={`px-2 py-1.5 ${t.bg} border ${t.border} rounded text-xs font-bold ${t.text} flex items-center justify-center gap-1 cursor-pointer transition`}
+              >
+                <Users className={`w-3.5 h-3.5 ${t.icon}`} />
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
