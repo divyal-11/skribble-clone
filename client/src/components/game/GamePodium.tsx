@@ -88,6 +88,11 @@ export function GamePodium({
           firstScore={ranked[0] ? (finalScores?.[ranked[0].id] ?? ranked[0].score) : 0}
           secondScore={ranked[1] ? (finalScores?.[ranked[1].id] ?? ranked[1].score) : 0}
           thirdScore={ranked[2] ? (finalScores?.[ranked[2].id] ?? ranked[2].score) : 0}
+          remaining={ranked.slice(3).map((p, idx) => ({
+            player: p,
+            score: finalScores?.[p.id] ?? p.score,
+            rank: idx + 4,
+          }))}
         />
       )}
 

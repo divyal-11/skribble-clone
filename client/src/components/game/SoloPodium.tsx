@@ -1,6 +1,7 @@
 import { Player } from "@/types/events";
 import { Avatar } from "@/components/common/Avatar";
 import { DoodlCrown, DoodlTrophy } from "@/components/common/DoodlIcons";
+import { SoloPodiumRemaining, RankedPlayerEntry } from "./SoloPodiumRemaining";
 
 interface SoloPodiumProps {
   first?: Player;
@@ -9,6 +10,7 @@ interface SoloPodiumProps {
   firstScore: number;
   secondScore: number;
   thirdScore: number;
+  remaining?: RankedPlayerEntry[];
 }
 
 export function SoloPodium({
@@ -18,9 +20,12 @@ export function SoloPodium({
   firstScore,
   secondScore,
   thirdScore,
+  remaining = [],
 }: SoloPodiumProps) {
   return (
-    <div className="w-full flex items-end justify-center gap-4 sm:gap-8 mb-8 min-h-[260px]">
+    <div className="w-full flex flex-col items-center mb-8">
+      {/* Top 3 Podium Pedestals */}
+      <div className="w-full flex items-end justify-center gap-4 sm:gap-8 min-h-[260px]">
       {/* 2nd Place */}
       {second && (
         <div className="w-36 sm:w-44 flex flex-col items-center">
@@ -57,19 +62,23 @@ export function SoloPodium({
         </div>
       )}
 
-      {/* 3rd Place */}
-      {third && (
-        <div className="w-36 sm:w-44 flex flex-col items-center">
-          <Avatar seed={third.name || third.id} size={52} isHost={false} />
-          <div className="w-full h-20 sm:h-24 border-2 border-amber-600 rounded-t-xl relative bg-black/10">
-            <span className="absolute top-2 left-3 font-bold text-lg text-amber-600">#3</span>
-            <div className="flex flex-col items-center justify-center h-full pt-3 px-2">
-              <span className="font-bold text-sm text-white truncate max-w-[120px]">{third.name}</span>
-              <span className="text-xs text-amber-500 font-normal">{thirdScore} points</span>
+        {/* 3rd Place */}
+        {third && (
+          <div className="w-36 sm:w-44 flex flex-col items-center">
+            <Avatar seed={third.name || third.id} size={52} isHost={false} />
+            <div className="w-full h-20 sm:h-24 border-2 border-amber-600 rounded-t-xl relative bg-black/10">
+              <span className="absolute top-2 left-3 font-bold text-lg text-amber-600">#3</span>
+              <div className="flex flex-col items-center justify-center h-full pt-3 px-2">
+                <span className="font-bold text-sm text-white truncate max-w-[120px]">{third.name}</span>
+                <span className="text-xs text-amber-500 font-normal">{thirdScore} points</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Remaining Players below Podium */}
+      <SoloPodiumRemaining remaining={remaining} />
     </div>
   );
 }

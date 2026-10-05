@@ -9,6 +9,8 @@ interface InGameScoreboardProps {
   hostId: string | null;
   currentDrawerId: string | null;
   teamScores?: Record<string, number>;
+  isRoundEnd?: boolean;
+  turnScores?: Record<string, number>;
 }
 
 const TEAM_CONFIG: Record<string, { label: string; border: string; bg: string; text: string }> = {
@@ -24,6 +26,8 @@ export function InGameScoreboard({
   hostId,
   currentDrawerId,
   teamScores,
+  isRoundEnd,
+  turnScores,
 }: InGameScoreboardProps) {
   // Sort players by score descending
   const sortedPlayers = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -57,15 +61,21 @@ export function InGameScoreboard({
           const isMe = p.id === myPlayerId;
           const isHost = p.id === hostId;
           const isDrawer = p.id === currentDrawerId;
-          const hasGuessed = p.hasGuessed;
+          const delta = turnScores?.[p.id] ?? 0;
+          const hasGuessed = p.hasGuessed || delta > 0;
           const team = p.teamId ? TEAM_CONFIG[p.teamId] : null;
+
+          const isCardGuessed = hasGuessed;
+          const isCardMissed = Boolean(isRoundEnd && !hasGuessed && !isDrawer);
 
           return (
             <div
               key={p.id}
               className={`flex items-center justify-between px-2 py-1.5 rounded transition-all duration-300 relative border ${
-                hasGuessed
+                isCardGuessed
                   ? "bg-emerald-500/15 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                  : isCardMissed
+                  ? "bg-rose-500/10 border-rose-500/40"
                   : isDrawer
                   ? "bg-amber-500/10 border-amber-500/50"
                   : "bg-white text-zinc-900 border-zinc-300 shadow-sm"
@@ -75,7 +85,13 @@ export function InGameScoreboard({
               <div className="flex flex-col items-center justify-center min-w-[22px]">
                 <span
                   className={`font-mono text-xs font-black ${
-                    hasGuessed ? "text-emerald-400" : isDrawer ? "text-amber-400" : "text-zinc-800"
+                    isCardGuessed
+                      ? "text-emerald-400"
+                      : isCardMissed
+                      ? "text-rose-400"
+                      : isDrawer
+                      ? "text-amber-400"
+                      : "text-zinc-800"
                   }`}
                 >
                   #{index + 1}
@@ -88,8 +104,10 @@ export function InGameScoreboard({
                 <div className="flex items-center gap-1.5">
                   <p
                     className={`text-xs font-black truncate ${
-                      hasGuessed
+                      isCardGuessed
                         ? "text-emerald-300"
+                        : isCardMissed
+                        ? "text-rose-300"
                         : isDrawer
                         ? "text-amber-300"
                         : "text-blue-600"
@@ -110,10 +128,27 @@ export function InGameScoreboard({
                 <div className="flex items-center gap-2 mt-0.5">
                   <p
                     className={`text-[11px] font-bold ${
-                      hasGuessed ? "text-emerald-400/90" : isDrawer ? "text-amber-400/90" : "text-zinc-500"
+                      isCardGuessed
+                        ? "text-emerald-400"
+                        : isCardMissed
+                        ? "text-rose-400 font-extrabold"
+                        : isDrawer
+                        ? "text-amber-400/90"
+                        : "text-zinc-500"
                     }`}
                   >
                     {p.score || 0} pts
+                    {isRoundEnd && (
+                      <span className="font-mono text-[10px] ml-1">
+                        {isCardGuessed
+                          ? `(+${delta})`
+                          : isCardMissed
+                          ? "(+0)"
+                          : delta > 0
+                          ? `(+${delta})`
+                          : ""}
+                      </span>
+                    )}
                   </p>
 
                   {/* Status Indicator */}
@@ -127,6 +162,11 @@ export function InGameScoreboard({
                     <span className="flex items-center gap-0.5 text-[10px] font-black text-emerald-500">
                       <Check className="w-3 h-3 stroke-[3]" />
                       Guessed!
+                    </span>
+                  )}
+                  {isCardMissed && (
+                    <span className="text-[10px] font-black text-rose-400">
+                      Missed
                     </span>
                   )}
                 </div>

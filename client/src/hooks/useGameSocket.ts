@@ -134,6 +134,7 @@ export function useGameSocket() {
       setWordOptions([]);
       setCurrentWord(undefined);
       setRevealedWord(null);
+      setPlayers((prev) => prev.map((p) => ({ ...p, hasGuessed: false })));
     };
 
     const onChooseWord = (data: { options: string[] }) => {
@@ -155,6 +156,7 @@ export function useGameSocket() {
       setWordOptions([]);
       setCurrentWord(data.word);
       setTurnScores({});
+      setPlayers((prev) => prev.map((p) => ({ ...p, hasGuessed: false })));
       soundManager.play("roundStart");
     };
 
@@ -216,7 +218,7 @@ export function useGameSocket() {
         prev.map((p) => ({
           ...p,
           score: data.scores[p.id] !== undefined ? data.scores[p.id] : p.score,
-          hasGuessed: false,
+          hasGuessed: Boolean((data.scoreDeltas?.[p.id] ?? 0) > 0 || p.hasGuessed),
         })),
       );
     };

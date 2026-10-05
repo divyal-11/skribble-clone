@@ -171,6 +171,8 @@ export default function Home() {
               hostId={hostId}
               currentDrawerId={currentDrawerId}
               teamScores={teamScores}
+              isRoundEnd={roomStatus === "roundEnd"}
+              turnScores={turnScores}
             />
           </div>
 
