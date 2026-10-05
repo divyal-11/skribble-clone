@@ -12,6 +12,32 @@ Engineered from the ground up for low-latency vector stroke streaming, resilienc
 
 ---
 
+## 📸 Visual Walkthrough & Screenshots
+
+### 1. Landing & Room Setup
+![Landing & Room Customizer](./docs/screenshots/01_landing_page.png)
+* **Interactive Player Identity**: Animated cartoon avatars with live randomization, language selector, and tab-isolated UUID sessions.
+* **Instant Join & Code Validation**: One-click room creation or direct 6-character room code joining with automatic capitalization.
+
+### 2. Interactive 3-Column Room Lobby
+![Room Lobby](./docs/screenshots/02_room_lobby.png)
+* **Live Roster & Team Badges**: Real-time player list featuring animated join toasts, host crown indicator, and configurable team color badges (Red/Blue/Green/Yellow) with one-click team cycling.
+* **Host Match Configuration**: Granular controls for draw time (15s–240s), rounds (2–10), game mode (Normal vs. 2–4 Teams), word count, progressive hints, and custom comma-separated wordpacks.
+* **Room Code & Invite Sharing**: Instant one-click clipboard link sharing (`?room=CODE`) and pre-game lobby chat.
+
+### 3. Word Selection & Turn Intermission
+![Word Choosing State](./docs/screenshots/03_word_choosing.png)
+* **Anti-Cheat Information Asymmetry**: While the active drawer selects a secret word, guessers receive a masked canvas overlay with synchronized countdowns.
+* **Live Team Scoreboard**: Displays aggregate team score headers (`Red 0 pts | Blue 0 pts`) and flags the active drawer with an animated pencil indicator.
+
+### 4. Real-Time 3-Column Active Gameplay
+![Active Gameplay](./docs/screenshots/04_active_gameplay.png)
+* **Pure White Vector Canvas**: High-contrast drawing sheet supporting normalized float coordinates (`[0, 1]`) with zero viewport distortion across devices.
+* **Live In-Game Scoreboard**: Real-time player ranking sorted by score, active drawer badges, and instantaneous green *"Guessed!"* highlights on correct guesses.
+* **Levenshtein Near-Miss Detection**: Real-time guess box on the right displaying private typo alerts (*"applle" is very close!*) without leaking words in public chat.
+
+---
+
 ## 🚀 Key Highlights & Architecture
 
 ```
