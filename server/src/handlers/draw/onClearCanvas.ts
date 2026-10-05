@@ -6,6 +6,7 @@ import{
 } from "../../types/events.js"
 import { clearRoomStrokes } from "../../services/strokeService.js";
 import {getRoom} from "../../services/roomService.js"
+import { checkRateLimit } from "../../services/rateLimiterService.js";
 
 type AppSocket = Socket<
     ClientToServerEvents,
@@ -18,6 +19,12 @@ export function handleClearCanvas(socket: AppSocket){
     const playerId = socket.data.playerId;
 
     socket.on("clearCanvas",async({roomId})=>{
+
+        // drop flood events silently
+        if(!checkRateLimit(socket.id,"clearCanvas")){
+            return;
+        }
+
         const cleanRoomId = roomId.trim().toUpperCase();
 
         // first check is only drawer can clear the canvas

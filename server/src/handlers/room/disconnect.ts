@@ -6,6 +6,8 @@ import {
 } from "../../types/events.js";
 import { removePlayerFromRoom, setPlayerConnectionStatus } from "../../services/playerService.js";
 import { getRoom } from "../../services/roomService.js";
+import { cleanupSocketRateLimits } from "../../services/rateLimiterService.js";
+
 
 
 type AppSocket = Socket<
@@ -30,7 +32,11 @@ export function cancelDisconnectGracePeriod(playerId: string): void{
 
 export function handleDisconnect(socket: AppSocket) {
   const playerId = socket.data.playerId;
+
   socket.on("disconnect", async (reason) => {
+    // Clean up rate limiting memory
+    cleanupSocketRateLimits(socket.id);
+    
     const currentRoomId = socket.data.roomId;
     console.log(`❌ Disconnected: socket=${socket.id} (Reason: ${reason})`);
     if (!currentRoomId) return;

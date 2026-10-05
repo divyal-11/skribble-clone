@@ -8,6 +8,8 @@ import {
 
 import { addStrokeToRoom } from "../../services/strokeService.js";
 import { getRoom } from "../../services/roomService.js";
+import { checkRateLimit } from "../../services/rateLimiterService.js";
+
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -19,7 +21,13 @@ type AppSocket = Socket<
 export function handleDraw(socket: AppSocket) {
   const playerId = socket.data.playerId;
 
+  
+
   socket.on("draw", async (payload) => {
+    // Drop flood events silently
+    if (!checkRateLimit(socket.id, "draw")) {
+      return;
+    }
     const { roomId, ...strokeData } = payload;
     const cleanRoomId = roomId.trim().toUpperCase();
 

@@ -8,6 +8,7 @@ import { getRoom } from "../../services/roomService.js";
 import { getRoomPlayers, updatePlayerScore } from "../../services/playerService.js";
 import { isCloseGuess, calculateGuessScore } from "../../services/chatService.js";
 import { getRemainingTime, triggerTurnEndEarly } from "../../services/timeServices.js";
+import { checkRateLimit } from "../../services/rateLimiterService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -27,6 +28,10 @@ export function handleGuess(io:AppServer,socket:AppSocket){
   const playerId = socket.data.playerId;
 
   socket.on("guess",async({roomId,text})=>{
+    // Drop flood events silently
+    if (!checkRateLimit(socket.id, "guess")) {
+      return;
+    }
     const cleanRoomId = roomId.trim().toUpperCase();
     const cleanText = text.trim();
     if (!cleanText) return;
