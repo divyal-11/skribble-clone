@@ -26,7 +26,7 @@ export interface ChatMessagePayload {
   senderId: string;
   senderName: string;
   text: string;
-  type: "chat" | "correct" | "close" | "system";
+  type: "chat" | "correct" | "close" | "system" | "info" | "join" | "leave";
 }
 
 
@@ -77,7 +77,12 @@ export interface ServerToClientEvents {
   }) => void;
   hintRevealed: (payload: { maskedWord: string }) => void;
   scoreUpdate: (payload: { scores: Record<string, number>; guesserId?: string }) => void;
-  turnEnded: (payload: { word: string; scores: Record<string, number> }) => void;
+  turnEnded: (payload: {
+    word: string;
+    scores: Record<string, number>;
+    scoreDeltas?: Record<string, number>;
+    reason?: string;
+  }) => void;
   gameEnded: (payload: { finalScores: Record<string, number> }) => void;
   // Day 1 plumbing test
   pong: () => void;

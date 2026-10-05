@@ -51,10 +51,18 @@ export function handleGuess(io:AppServer,socket:AppSocket){
     const isCorrect = cleanText.toLowerCase()=== room.currentWord.toLowerCase();
 
     if(isCorrect){
-        //calc points and update redis
         const remainingSeconds = await getRemainingTime(cleanRoomId);
         const score = calculateGuessScore(remainingSeconds);
         const {players:updatedPlayers,updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
+
+        // Skribbl drawer bonus: drawer receives 25% of guesser's score
+        if (room.currentDrawerId && room.currentDrawerId !== playerId) {
+          const drawerBonus = Math.round(score * 0.25);
+          if (drawerBonus > 0) {
+            const { updatedScores: withDrawerScores } = await updatePlayerScore(cleanRoomId, room.currentDrawerId, drawerBonus);
+            Object.assign(updatedScores, withDrawerScores);
+          }
+        }
 
         //privately send the secret word to the correct guesser to fill their masked blanks
         socket.emit("guessResult", {

@@ -27,6 +27,7 @@ interface ActiveTimer {
   revealedIndices: number[];
   hint50Given: boolean;
   hint75Given: boolean;
+  startScores?: Record<string, number>;
 }
 
 const activeTimers = new Map<string, ActiveTimer>();
@@ -121,13 +122,19 @@ function checkProgressiveHints(
 /**
  * Starts the round countdown timer (ticks every sec, monitors hints)
  */
-export function startTurnTimer(
+export async function startTurnTimer(
   io: AppServer,
   roomId: string,
   durationSeconds: number = 60
-): void {
+): Promise<void> {
   stopTurnTimer(roomId);
   const endsAt = Date.now() + durationSeconds * 1000;
+
+  const currentPlayers = await getRoomPlayers(roomId);
+  const startScores: Record<string, number> = {};
+  currentPlayers.forEach((p) => {
+    startScores[p.id] = p.score;
+  });
 
   const intervalId = setInterval(async () => {
     const timer = activeTimers.get(roomId);
@@ -155,6 +162,7 @@ export function startTurnTimer(
     revealedIndices: [],
     hint50Given: false,
     hint75Given: false,
+    startScores,
   });
 
   console.log(`⏱️ Turn timer started for room ${roomId}: ${durationSeconds}s`);
@@ -216,17 +224,51 @@ export async function handleTurnEnd(
   io: AppServer,
   roomId: string
 ): Promise<void> {
+  const timer = activeTimers.get(roomId);
+  const startScores = timer?.startScores || {};
   stopTurnTimer(roomId);
 
   const room = await getRoom(roomId);
   const players = await getRoomPlayers(roomId);
 
   const scores: Record<string, number> = {};
-  players.forEach((p) => { scores[p.id] = p.score; });
+  const scoreDeltas: Record<string, number> = {};
+
+  players.forEach((p) => {
+    scores[p.id] = p.score;
+    const delta = p.score - (startScores[p.id] ?? p.score);
+    if (delta > 0) {
+      scoreDeltas[p.id] = delta;
+    }
+  });
 
   const revealedWord = room?.currentWord ?? "";
-  io.to(roomId).emit("turnEnded", { word: revealedWord, scores });
-  console.log(`🏁 Turn ended in ${roomId}. Word was: "${revealedWord}"`);
+
+  const nonDrawers = players.filter((p) => p.id !== room?.currentDrawerId);
+  const guessedCount = nonDrawers.filter((p) => p.hasGuessed).length;
+  let reason = "Time's up!";
+  if (nonDrawers.length > 0 && guessedCount === nonDrawers.length) {
+    reason = "Everyone guessed the word!";
+  } else if (guessedCount === 0) {
+    reason = "Nobody guessed the word!";
+  }
+
+  io.to(roomId).emit("turnEnded", {
+    word: revealedWord,
+    scores,
+    scoreDeltas,
+    reason,
+  });
+  console.log(`🏁 Turn ended in ${roomId}. Word was: "${revealedWord}" (${reason})`);
+
+  if (revealedWord) {
+    io.to(roomId).emit("chatMessage", {
+      senderId: "system",
+      senderName: "System",
+      text: `The word was '${revealedWord}'`,
+      type: "system",
+    });
+  }
 
   await clearRoomStrokes(roomId);
   io.to(roomId).emit("drawData", { type: "clear", x: 0, y: 0 });

@@ -1,61 +1,66 @@
-import { Sparkles } from "lucide-react";
 import { Player } from "@/types/events";
-import { Avatar } from "../common/Avatar";
 
 interface TurnEndBannerProps {
   word: string;
   players?: Player[];
+  scoreDeltas?: Record<string, number>;
+  reason?: string;
 }
 
-export function TurnEndBanner({ word, players }: TurnEndBannerProps) {
-  const topPlayers = players
-    ? [...players].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 3)
-    : [];
+export function TurnEndBanner({
+  word,
+  players = [],
+  scoreDeltas = {},
+  reason,
+}: TurnEndBannerProps) {
+  // Find all players who scored points this turn, sorted highest delta first
+  const scoredPlayers = players
+    .map((p) => ({
+      name: p.name,
+      delta: scoreDeltas[p.id] || 0,
+    }))
+    .filter((p) => p.delta > 0)
+    .sort((a, b) => b.delta - a.delta);
+
+  const displayReason =
+    reason ||
+    (scoredPlayers.length === 0
+      ? "Time's up!"
+      : "Everyone guessed the word!");
 
   return (
-    <div className="absolute inset-0 bg-zinc-950/90 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-      <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-2 animate-bounce">
-        <Sparkles className="w-7 h-7" />
+    <div className="absolute inset-0 bg-[#383e56] z-20 flex flex-col items-center justify-center p-6 text-center animate-fade-in select-none">
+      {/* 1. Word Reveal */}
+      <div className="text-2xl sm:text-3xl text-white font-normal mb-1.5 flex items-center justify-center gap-2.5">
+        <span>The word was</span>
+        <span className="font-bold text-[#fbc531] text-3xl sm:text-4xl tracking-wide">
+          {word}
+        </span>
       </div>
 
-      <p className="text-xs font-bold tracking-widest uppercase text-zinc-400 mb-0.5">
-        The word was
-      </p>
+      {/* 2. Subtitle Reason */}
+      <div className="text-base sm:text-lg text-zinc-300 font-normal mb-8">
+        {displayReason}
+      </div>
 
-      <h2 className="text-3xl sm:text-4xl font-black text-[#56ce27] tracking-wider uppercase drop-shadow-[0_4px_16px_rgba(86,206,39,0.35)] mb-3">
-        {word}
-      </h2>
-
-      {/* Mini Scoreboard Recap */}
-      {topPlayers.length > 0 && (
-        <div className="flex items-center justify-center gap-3 mb-4 w-full max-w-sm">
-          {topPlayers.map((p, idx) => (
+      {/* 3. Points Breakdown */}
+      {scoredPlayers.length > 0 && (
+        <div className="flex flex-col gap-2.5 w-64 sm:w-72">
+          {scoredPlayers.map((p) => (
             <div
-              key={p.id}
-              className="flex flex-col items-center bg-zinc-900/90 border border-zinc-700/60 rounded-xl px-3 py-2 flex-1 shadow-md"
+              key={p.name}
+              className="flex items-center justify-between text-base sm:text-lg"
             >
-              <span className="text-[10px] font-black text-amber-400 mb-1">
-                #{idx + 1}
-              </span>
-              <Avatar seed={p.name || p.id} size={32} />
-              <span className="text-xs font-bold text-white truncate max-w-[70px] mt-1">
+              <span className="font-medium text-white truncate max-w-[190px]">
                 {p.name}
               </span>
-              <span className="text-[11px] font-black text-emerald-400 mt-0.5">
-                {p.score || 0} pts
+              <span className="font-bold text-[#2ed573] font-mono tracking-wide">
+                +{p.delta}
               </span>
             </div>
           ))}
         </div>
       )}
-
-      <div className="w-48 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-        <div className="h-full bg-emerald-500 rounded-full animate-[shrink_5s_linear_forwards]" />
-      </div>
-
-      <p className="text-xs text-zinc-500 font-semibold mt-2.5">
-        Next turn starting shortly...
-      </p>
     </div>
   );
 }

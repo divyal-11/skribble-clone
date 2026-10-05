@@ -63,6 +63,8 @@ export default function Home() {
     finalScores,
     switchTeam,
     teamScores,
+    turnScores,
+    turnEndReason,
   } = useGameSocket();
 
   const handleCreateRoom = () => {
@@ -152,6 +154,8 @@ export default function Home() {
               isRoundEnd={roomStatus === "roundEnd"}
               revealedWord={revealedWord || undefined}
               players={players}
+              turnScores={turnScores}
+              turnEndReason={turnEndReason}
             />
           </div>
 

@@ -29,6 +29,8 @@ export function useGameSocket() {
     null,
   );
   const [teamScores, setTeamScores] = useState<Record<string, number>>({});
+  const [turnScores, setTurnScores] = useState<Record<string, number>>({});
+  const [turnEndReason, setTurnEndReason] = useState<string>("Everyone guessed the word!");
 
   const showNotification = (message: string, type: "join" | "leave") => {
     setNotification({ message, type });
@@ -144,6 +146,7 @@ export function useGameSocket() {
       setChoosingDrawerName(null);
       setWordOptions([]);
       setCurrentWord(data.word);
+      setTurnScores({});
     };
 
     const onGuessResult = (data: {
@@ -179,10 +182,14 @@ export function useGameSocket() {
     const onTurnEnded = (data: {
       word: string;
       scores: Record<string, number>;
+      scoreDeltas?: Record<string, number>;
+      reason?: string;
     }) => {
       setRoomStatus("roundEnd");
       setRevealedWord(data.word);
       setRoundEndsAt(null);
+      setTurnScores(data.scoreDeltas || {});
+      setTurnEndReason(data.reason || "Time's up!");
       setPlayers((prev) =>
         prev.map((p) => ({
           ...p,
@@ -338,5 +345,7 @@ export function useGameSocket() {
     messages,
     sendGuess,
     timeLeft,
+    turnScores,
+    turnEndReason,
   };
 }

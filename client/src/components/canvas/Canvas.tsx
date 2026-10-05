@@ -19,6 +19,8 @@ interface CanvasProps {
   isRoundEnd?: boolean;
   revealedWord?: string;
   players?: Player[];
+  turnScores?: Record<string, number>;
+  turnEndReason?: string;
 }
 
 export function Canvas({
@@ -33,6 +35,8 @@ export function Canvas({
   isRoundEnd,
   revealedWord,
   players,
+  turnScores,
+  turnEndReason,
 }: CanvasProps) {
   const [color, setColor] = useState("#000000");
   const [size, setSize] = useState(4);
@@ -59,7 +63,12 @@ export function Canvas({
         )}
 
         {isRoundEnd && revealedWord && (
-          <TurnEndBanner word={revealedWord} players={players} />
+          <TurnEndBanner
+            word={revealedWord}
+            players={players}
+            scoreDeltas={turnScores}
+            reason={turnEndReason}
+          />
         )}
         <canvas
           ref={canvasRef}

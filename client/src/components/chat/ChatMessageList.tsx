@@ -50,6 +50,58 @@ export function ChatMessageList({ messages =[] }: ChatMessageListProps) {
             );
           }
 
+          if (msg.type === "info") {
+            return (
+              <div
+                key={index}
+                className="text-[#3b82f6] font-bold px-3 py-0.5"
+              >
+                {msg.text}
+              </div>
+            );
+          }
+
+          if (msg.type === "join") {
+            return (
+              <div
+                key={index}
+                className="text-[#22c55e] font-bold px-3 py-0.5"
+              >
+                {msg.text}
+              </div>
+            );
+          }
+
+          if (msg.type === "leave") {
+            return (
+              <div
+                key={index}
+                className="text-[#f97316] font-bold px-3 py-0.5"
+              >
+                {msg.text}
+              </div>
+            );
+          }
+
+          if (msg.type === "system") {
+            const isWordReveal = msg.text.startsWith("The word was");
+            const isOwner = msg.text.includes("room owner");
+            return (
+              <div
+                key={index}
+                className={`font-bold px-3 py-0.5 ${
+                  isWordReveal
+                    ? "text-[#22c55e] font-extrabold"
+                    : isOwner
+                    ? "text-[#f97316]"
+                    : "text-amber-600"
+                }`}
+              >
+                {msg.text}
+              </div>
+            );
+          }
+
           return (
             <div
               key={index}

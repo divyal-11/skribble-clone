@@ -7,6 +7,7 @@ import {
 import { selectWordInRoom } from "../../services/wordService.js";
 import { startTurnTimer } from "../../services/timeServices.js";
 import { getRoom } from "../../services/roomService.js";
+import { getRoomPlayers } from "../../services/playerService.js";
 import { redis } from "../../lib/redis.js";
 
 type AppSocket = Socket<
@@ -60,7 +61,18 @@ export function handleWordSelect(io: AppServer, socket: AppSocket) {
       duration,
     });
 
-    startTurnTimer(io, cleanRoomId, duration);
+    const players = await getRoomPlayers(cleanRoomId);
+    const drawer = players.find((p) => p.id === playerId);
+    if (drawer) {
+      io.to(cleanRoomId).emit("chatMessage", {
+        senderId: "system",
+        senderName: "System",
+        text: `${drawer.name} is drawing now!`,
+        type: "info",
+      });
+    }
+
+    await startTurnTimer(io, cleanRoomId, duration);
 
     console.log(
       `📢 Broadcasted wordChosen (hint: "${result.maskedWord}", duration: ${duration}s) to room ${cleanRoomId}`
