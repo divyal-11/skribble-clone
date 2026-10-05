@@ -10,6 +10,8 @@ interface JoinRoomCardProps {
   onCreateRoom: () => void;
   onJoinRoom: (e: React.FormEvent) => void;
   isConnected: boolean;
+  inviteRoomCode?: string | null;
+  onClearInvite?: () => void;
 }
 
 export function JoinRoomCard({
@@ -20,6 +22,8 @@ export function JoinRoomCard({
   onCreateRoom,
   onJoinRoom,
   isConnected,
+  inviteRoomCode,
+  onClearInvite,
 }: JoinRoomCardProps) {
   const [avatarIndex, setAvatarIndex] = useState(0);
   const sampleSeeds = ["doodler", "sparky", "blaze", "pixel", "cosmo", "boba", "momo", "waffles"];
@@ -87,45 +91,72 @@ export function JoinRoomCard({
         </button>
       </div>
 
-      {/* 3. Big Green 3D Play Button */}
-      <button
-        type="button"
-        onClick={onCreateRoom}
-        disabled={!isConnected}
-        className="skribbl-btn-green w-full py-3.5 rounded-xl font-black text-xl uppercase tracking-wider text-black flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
-      >
-        <Play className="w-5 h-5 fill-black" />
-        <span>Create Room</span>
-      </button>
+      {/* 3. Action Section: Invite Mode vs Standard Mode */}
+      {inviteRoomCode ? (
+        <div className="flex flex-col gap-2.5">
+          {/* Big Green Play! Button */}
+          <button
+            type="button"
+            onClick={onJoinRoom}
+            disabled={!isConnected}
+            className="skribbl-btn-green w-full py-3.5 rounded-xl font-black text-2xl tracking-wider text-black flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50 shadow-lg"
+          >
+            <Play className="w-6 h-6 fill-black" />
+            <span>Play!</span>
+          </button>
 
-      {/* 4. Join Existing Room Divider */}
-      <div className="relative flex py-1 items-center">
-        <div className="flex-grow border-t border-white/20" />
-        <span className="flex-shrink mx-3 text-xs font-bold text-blue-200 uppercase tracking-widest">
-          Or Join with Code
-        </span>
-        <div className="flex-grow border-t border-white/20" />
-      </div>
+          {/* Secondary: Create Private Room instead */}
+          <button
+            type="button"
+            onClick={onClearInvite}
+            className="skribbl-btn-blue w-full py-2.5 rounded-xl font-bold text-sm tracking-wide text-white transition cursor-pointer shadow"
+          >
+            Create Private Room
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Standard Mode: Big Green 3D Create Room Button */}
+          <button
+            type="button"
+            onClick={onCreateRoom}
+            disabled={!isConnected}
+            className="skribbl-btn-green w-full py-3.5 rounded-xl font-black text-xl uppercase tracking-wider text-black flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+          >
+            <Play className="w-5 h-5 fill-black" />
+            <span>Create Room</span>
+          </button>
 
-      {/* 5. Join Room Code Form */}
-      <form onSubmit={onJoinRoom} className="flex items-center gap-2">
-        <input
-          type="text"
-          placeholder="ENTER ROOM CODE"
-          value={roomInput}
-          onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
-          maxLength={6}
-          className="flex-1 px-3.5 py-2.5 bg-white text-zinc-900 placeholder:text-zinc-400 font-mono font-black text-sm uppercase text-center rounded-lg outline-none border border-zinc-400 focus:border-[#56b2fd] shadow-inner"
-        />
-        <button
-          type="submit"
-          disabled={!isConnected || !roomInput.trim()}
-          className="skribbl-btn-blue px-5 py-2.5 rounded-lg font-black text-sm uppercase tracking-wider text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-        >
-          <LogIn className="w-4 h-4" />
-          <span>Join</span>
-        </button>
-      </form>
+          {/* Join Existing Room Divider */}
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-white/20" />
+            <span className="flex-shrink mx-3 text-xs font-bold text-blue-200 uppercase tracking-widest">
+              Or Join with Code
+            </span>
+            <div className="flex-grow border-t border-white/20" />
+          </div>
+
+          {/* Join Room Code Form */}
+          <form onSubmit={onJoinRoom} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="ENTER ROOM CODE"
+              value={roomInput}
+              onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+              maxLength={6}
+              className="flex-1 px-3.5 py-2.5 bg-white text-zinc-900 placeholder:text-zinc-400 font-mono font-black text-sm uppercase text-center rounded-lg outline-none border border-zinc-400 focus:border-[#56b2fd] shadow-inner"
+            />
+            <button
+              type="submit"
+              disabled={!isConnected || !roomInput.trim()}
+              className="skribbl-btn-blue px-5 py-2.5 rounded-lg font-black text-sm uppercase tracking-wider text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Join</span>
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
 }

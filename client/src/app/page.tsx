@@ -1,7 +1,7 @@
 "use client";
 
 import { SkribblLogo } from "@/components/common/SkribblLogo";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getPlayerId } from "@/lib/socket";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import {
@@ -19,6 +19,25 @@ import { InGameScoreboard } from "@/components/game/InGameScoreboard";
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
   const [roomInput, setRoomInput] = useState("");
+  const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get("room");
+      if (roomParam) {
+        setInviteRoomCode(roomParam.toUpperCase());
+        setRoomInput(roomParam.toUpperCase());
+      } else {
+        // Also support skribbl direct format: ?XYZ123
+        const rawParam = window.location.search.replace(/^\?/, "").trim();
+        if (rawParam && /^[A-Za-z0-9]{4,8}$/.test(rawParam) && !rawParam.includes("=")) {
+          setInviteRoomCode(rawParam.toUpperCase());
+          setRoomInput(rawParam.toUpperCase());
+        }
+      }
+    }
+  }, []);
 
   const {
     isConnected,
@@ -54,8 +73,17 @@ export default function Home() {
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!playerName.trim()) return alert("Please enter your Name first");
-    if (!roomInput.trim()) return alert("Please enter room code");
-    joinRoom(roomInput.trim().toUpperCase(), playerName.trim());
+    const targetRoom = (inviteRoomCode || roomInput).trim().toUpperCase();
+    if (!targetRoom) return alert("Please enter room code");
+    joinRoom(targetRoom, playerName.trim());
+  };
+
+  const handleClearInvite = () => {
+    setInviteRoomCode(null);
+    setRoomInput("");
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   };
 
   const myPlayerId = typeof window !== "undefined" ? getPlayerId() : "";
@@ -81,6 +109,8 @@ export default function Home() {
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           isConnected={isConnected}
+          inviteRoomCode={inviteRoomCode}
+          onClearInvite={handleClearInvite}
         />
       ) : roomStatus === "gameEnd" ? (
         /* 🏆 1. Game Over Podium Screen */
