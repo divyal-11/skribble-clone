@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "benchmark": "tsx scripts/loadTest.ts"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
@@ -19,6 +20,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.2",
+    "socket.io-client": "^4.8.4",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
