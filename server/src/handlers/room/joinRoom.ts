@@ -24,7 +24,7 @@ const VALID_TEAMS: TeamId[] = ["red", "blue", "green", "yellow"];
 export function handleJoinRoom(socket: AppSocket) {
   const playerId = socket.data.playerId;
 
-  socket.on("joinRoom", async ({ roomId, playerName, teamId }) => {
+  socket.on("joinRoom", async ({ roomId, playerName, teamId, language }) => {
     const cleanRoomId = roomId.trim().toUpperCase();
     const cleanPlayerName = playerName.trim() || "Anonymous";
 
@@ -44,7 +44,7 @@ export function handleJoinRoom(socket: AppSocket) {
       teamId: cleanTeamId,
     };
 
-    const { room, players,isReconnect } = await addPlayerToRoom(cleanRoomId, player);
+    const { room, players, isReconnect } = await addPlayerToRoom(cleanRoomId, player, language);
 
     socket.join(cleanRoomId);
     socket.data.roomId = cleanRoomId;
@@ -55,12 +55,24 @@ export function handleJoinRoom(socket: AppSocket) {
     const isDrawer = room.currentDrawerId === playerId;
     const roundEndsAt = getRoundEndsAt(cleanRoomId);
 
-    // 2. Send complete room snapshot
+    // 2. Send complete room snapshot with settings
     socket.emit("joinedRoom", {
       roomId: cleanRoomId,
       players,
       status: room.status,
       hostId: room.hostId,
+      settings: {
+        maxPlayers: room.maxPlayers || 8,
+        drawTime: room.drawTime || 80,
+        rounds: room.totalRounds || 3,
+        hints: room.hints || 2,
+        wordCount: room.wordCount || 3,
+        language: room.language || "English",
+        gameMode: room.gameMode || "Normal",
+        teamCount: room.teamCount || 2,
+        customWords: "",
+        customWordsOnly: room.customWordsOnly || false,
+      },
       currentDrawerId: room.currentDrawerId,
       maskedWord: masked,
       word: isDrawer ? room.currentWord : undefined,

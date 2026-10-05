@@ -11,23 +11,28 @@ export async function getRoomPlayers(roomId: string): Promise<Player[]> {
 
 export async function addPlayerToRoom(
   roomId: string,
-  player: Player
-): Promise<{ room: RoomMeta; players: Player[],isReconnect:boolean }> {
+  player: Player,
+  initialLanguage?: string
+): Promise<{ room: RoomMeta; players: Player[]; isReconnect: boolean }> {
   const roomKey = `room:${roomId}`;
   const playersKey = `room:${roomId}:players`;
 
   let room = await getRoom(roomId);
 
   if (!room) {
-    const newRoom:RoomMeta = {
+    const newRoom: RoomMeta = {
       hostId: player.id,
       status: "waiting",
       currentRound: 1,
       totalRounds: 3,
-      drawTime: 60,
+      drawTime: 80,
       wordCount: 3,
       hints: 2,
       customWordsOnly: false,
+      language: initialLanguage || "English",
+      gameMode: "Normal",
+      teamCount: 2,
+      maxPlayers: 8,
     };
     await redis.hset(roomKey, {
       hostId: newRoom.hostId,
@@ -38,16 +43,20 @@ export async function addPlayerToRoom(
       wordCount: newRoom.wordCount.toString(),
       hints: newRoom.hints.toString(),
       customWordsOnly: "false",
+      language: newRoom.language || "English",
+      gameMode: newRoom.gameMode || "Normal",
+      teamCount: (newRoom.teamCount || 2).toString(),
+      maxPlayers: (newRoom.maxPlayers || 8).toString(),
     });
     room = newRoom;
   }
   
   //check if player already exists in the room(reconnection)
-  const existingPlayerRaw = await redis.hget(playersKey, player.id)
+  const existingPlayerRaw = await redis.hget(playersKey, player.id);
   let isReconnect = false;
   let finalPlayer = player;
 
-  if(existingPlayerRaw){
+  if (existingPlayerRaw) {
     isReconnect = true;
     const existing = JSON.parse(existingPlayerRaw) as Player;
     //preserve existing score and guess state
@@ -58,6 +67,11 @@ export async function addPlayerToRoom(
       teamId: player.teamId || existing.teamId,
     };
     console.log(`🔄 Preserved existing score (${existing.score} pts) for reconnecting player ${player.id}`);    
+  }
+
+  // The room owner/host belongs to Blue Team by default
+  if (finalPlayer.id === room.hostId && !finalPlayer.teamId) {
+    finalPlayer.teamId = "blue";
   }
 
   await redis.hset(playersKey, player.id, JSON.stringify(finalPlayer));

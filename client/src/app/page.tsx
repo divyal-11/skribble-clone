@@ -20,6 +20,7 @@ import { TeamId } from "@/types/events";
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
   const [roomInput, setRoomInput] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
   const [inviteTeam, setInviteTeam] = useState<TeamId | null>(null);
 
@@ -52,6 +53,8 @@ export default function Home() {
     currentRoom,
     players,
     hostId,
+    roomSettings,
+    updateRoomSettings,
     wordOptions,
     notification,
     createRoom,
@@ -78,7 +81,7 @@ export default function Home() {
 
   const handleCreateRoom = () => {
     if (!playerName.trim()) return alert("Please enter your Name first");
-    createRoom(playerName.trim());
+    createRoom(playerName.trim(), selectedLanguage);
   };
 
   const handleJoinRoom = (e: React.FormEvent) => {
@@ -86,7 +89,7 @@ export default function Home() {
     if (!playerName.trim()) return alert("Please enter your Name first");
     const targetRoom = (inviteRoomCode || roomInput).trim().toUpperCase();
     if (!targetRoom) return alert("Please enter room code");
-    joinRoom(targetRoom, playerName.trim(), inviteTeam);
+    joinRoom(targetRoom, playerName.trim(), inviteTeam, selectedLanguage);
   };
 
   const handleClearInvite = () => {
@@ -117,6 +120,8 @@ export default function Home() {
           setPlayerName={setPlayerName}
           roomInput={roomInput}
           setRoomInput={setRoomInput}
+          language={selectedLanguage}
+          setLanguage={setSelectedLanguage}
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           isConnected={isConnected}
@@ -217,6 +222,8 @@ export default function Home() {
           myPlayerId={myPlayerId}
           hostId={hostId}
           messages={messages}
+          roomSettings={roomSettings}
+          onUpdateSettings={updateRoomSettings}
           onSendMessage={sendGuess}
           onStartGame={startGame}
           onSwitchTeam={switchTeam}

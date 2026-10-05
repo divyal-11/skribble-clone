@@ -32,9 +32,10 @@ export interface ChatMessagePayload {
 
 // Client -> Server events
 export interface ClientToServerEvents {
-  joinRoom: (payload: { roomId: string; playerName: string; teamId?: string | null }) => void;
+  joinRoom: (payload: { roomId: string; playerName: string; teamId?: string | null; language?: string }) => void;
   leaveRoom: (payload: { roomId: string }) => void;
   startGame: (payload: { roomId: string; settings?: RoomSettings }) => void;
+  updateRoomSettings: (payload: { roomId: string; settings: Partial<RoomSettings> }) => void;
   wordSelect: (payload: { roomId: string; word: string }) => void;
   draw: (payload: { roomId: string } & DrawStroke) => void;
   clearCanvas: (payload: { roomId: string }) => void;
@@ -50,10 +51,12 @@ export interface ServerToClientEvents {
     players: Player[];
     status: string;
     hostId: string;
+    settings?: RoomSettings;
     currentDrawerId?: string;
     maskedWord?: string;
     word?: string;
   }) => void;
+  roomSettingsUpdated: (payload: { settings: RoomSettings }) => void;
   playerJoined: (payload: { player: Player }) => void;
   playerLeft: (payload: { playerId: string; newHostId?: string }) => void;
   gameStarted: (payload: { turnOrder: string[]; totalRounds: number; currentDrawerId: string }) => void;

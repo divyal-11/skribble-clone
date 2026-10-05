@@ -53,7 +53,7 @@ export function handleGuess(io:AppServer,socket:AppSocket){
 
     if(isCorrect){
         const remainingSeconds = await getRemainingTime(cleanRoomId);
-        const score = calculateGuessScore(remainingSeconds);
+        const score = calculateGuessScore(remainingSeconds, Number(room.drawTime) || 80);
         const {players:updatedPlayers,updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
 
         // Record point delta for this turn

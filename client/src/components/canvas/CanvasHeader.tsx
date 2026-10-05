@@ -13,7 +13,7 @@ export function CanvasHeader({
   drawerName,
   word,
   maskedWord,
-  timeLeft = 60,
+  timeLeft = 80,
 }: CanvasHeaderProps) {
   return (
     <div className="flex items-center justify-between p-4 bg-zinc-900 border border-zinc-800 rounded-2xl">

@@ -18,11 +18,23 @@ export function useGameSocket() {
   const [choosingDrawerName, setChoosingDrawerName] = useState<string | null>(
     null,
   );
+  const [roomSettings, setRoomSettings] = useState<RoomSettings>({
+    maxPlayers: 8,
+    drawTime: 80,
+    rounds: 3,
+    hints: 2,
+    wordCount: 3,
+    language: "English",
+    gameMode: "Normal",
+    teamCount: 2,
+    customWords: "",
+    customWordsOnly: false,
+  });
   const [currentWord, setCurrentWord] = useState<string | undefined>(undefined);
   const [maskedWord, setMaskedWord] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessagePayload[]>([]);
   const [roundEndsAt, setRoundEndsAt] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [timeLeft, setTimeLeft] = useState<number>(80);
   const [revealedWord, setRevealedWord] = useState<string | null>(null);
   const [finalScores, setFinalScores] = useState<Record<string, number> | null>(
     null,
@@ -40,7 +52,7 @@ export function useGameSocket() {
   // Synchronized countdown timer with tick sound effect
   useEffect(() => {
     if (!roundEndsAt) {
-      setTimeLeft(60);
+      setTimeLeft(roomSettings.drawTime || 80);
       return;
     }
     let lastTick = -1;
@@ -58,7 +70,7 @@ export function useGameSocket() {
     updateTime();
     const interval = setInterval(updateTime, 500);
     return () => clearInterval(interval);
-  }, [roundEndsAt]);
+  }, [roundEndsAt, roomSettings.drawTime]);
 
   useEffect(() => {
     socket.connect();
@@ -81,6 +93,7 @@ export function useGameSocket() {
       players: Player[];
       status: string;
       hostId: string;
+      settings?: RoomSettings;
       currentDrawerId?: string;
       maskedWord?: string;
       word?: string;
@@ -89,6 +102,12 @@ export function useGameSocket() {
       setPlayers(data.players);
       setHostId(data.hostId);
       setRoomStatus(data.status);
+      if (data.settings) {
+        setRoomSettings(data.settings);
+        if (!roundEndsAt) {
+          setTimeLeft(data.settings.drawTime || 80);
+        }
+      }
       if (data.currentDrawerId) setCurrentDrawerId(data.currentDrawerId);
       if (data.maskedWord) setMaskedWord(data.maskedWord);
       if (data.word) setCurrentWord(data.word);
@@ -283,6 +302,14 @@ export function useGameSocket() {
       showNotification(`Game Paused: ${data.reason}`, "leave");
     };
 
+    const onRoomSettingsUpdated = (data: { settings: RoomSettings }) => {
+      setRoomSettings(data.settings);
+      if (!roundEndsAt) {
+        setTimeLeft(data.settings.drawTime || 80);
+      }
+    };
+
+    socket.on("roomSettingsUpdated", onRoomSettingsUpdated);
     socket.on("teamUpdated", onTeamUpdated);
     socket.on("teamScoresUpdate", onTeamScoresUpdate);
     socket.on("roomPaused", onRoomPaused);
@@ -291,6 +318,7 @@ export function useGameSocket() {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("joinedRoom", onJoinedRoom);
+      socket.off("roomSettingsUpdated", onRoomSettingsUpdated);
       socket.off("playerJoined", onPlayerJoined);
       socket.off("playerLeft", onPlayerLeft);
       socket.off("gameStarted", onGameStarted);
@@ -309,7 +337,7 @@ export function useGameSocket() {
     };
   }, []);
 
-  const createRoom = (playerName: string) => {
+  const createRoom = (playerName: string, language: string = "English") => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let code = "";
     for (let i = 0; i < 6; i++) {
@@ -317,10 +345,11 @@ export function useGameSocket() {
     }
     sessionStorage.setItem("doodl_room", code);
     sessionStorage.setItem("doodl_name", playerName);
-    socket.emit("joinRoom", { roomId: code, playerName });
+    sessionStorage.removeItem("doodl_team");
+    socket.emit("joinRoom", { roomId: code, playerName, language });
   };
 
-  const joinRoom = (roomId: string, playerName: string, teamId?: string | null) => {
+  const joinRoom = (roomId: string, playerName: string, teamId?: string | null, language?: string) => {
     sessionStorage.setItem("doodl_room", roomId);
     sessionStorage.setItem("doodl_name", playerName);
     if (teamId) {
@@ -328,7 +357,14 @@ export function useGameSocket() {
     } else {
       sessionStorage.removeItem("doodl_team");
     }
-    socket.emit("joinRoom", { roomId, playerName, teamId });
+    socket.emit("joinRoom", { roomId, playerName, teamId, language });
+  };
+
+  const updateRoomSettings = (settings: Partial<RoomSettings>) => {
+    if (currentRoom) {
+      setRoomSettings((prev) => ({ ...prev, ...settings }));
+      socket.emit("updateRoomSettings", { roomId: currentRoom, settings });
+    }
   };
 
   const leaveRoom = () => {
@@ -349,7 +385,7 @@ export function useGameSocket() {
       setMaskedWord(undefined);
       setMessages([]);
       setRoundEndsAt(null);
-      setTimeLeft(60);
+      setTimeLeft(roomSettings.drawTime || 80);
       setPlayersByTeam({});
     }
   };
@@ -362,7 +398,7 @@ export function useGameSocket() {
 
   const startGame = (settings?: RoomSettings) => {
     if (currentRoom) {
-      socket.emit("startGame", { roomId: currentRoom, settings });
+      socket.emit("startGame", { roomId: currentRoom, settings: settings || roomSettings });
     }
   };
 
@@ -384,6 +420,8 @@ export function useGameSocket() {
     currentRoom,
     players,
     hostId,
+    roomSettings,
+    updateRoomSettings,
     wordOptions,
     notification,
     createRoom,

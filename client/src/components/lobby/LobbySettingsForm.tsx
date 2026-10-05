@@ -55,7 +55,7 @@ export function LobbySettingsForm({
       label: "Language",
       Icon: DoodlLanguage,
       value: settings.language,
-      options: ["English", "German", "French", "Spanish", "Italian", "Russian", "Japanese"],
+      options: ["English", "German", "Spanish", "French", "Korean"],
       onChange: (v: string) => update({ language: v }),
     },
     {

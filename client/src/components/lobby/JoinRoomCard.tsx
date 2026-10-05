@@ -7,6 +7,8 @@ interface JoinRoomCardProps {
   setPlayerName: (name: string) => void;
   roomInput: string;
   setRoomInput: (code: string) => void;
+  language: string;
+  setLanguage: (lang: string) => void;
   onCreateRoom: () => void;
   onJoinRoom: (e: React.FormEvent) => void;
   isConnected: boolean;
@@ -27,6 +29,8 @@ export function JoinRoomCard({
   setPlayerName,
   roomInput,
   setRoomInput,
+  language,
+  setLanguage,
   onCreateRoom,
   onJoinRoom,
   isConnected,
@@ -54,11 +58,16 @@ export function JoinRoomCard({
           maxLength={18}
           className="flex-1 px-3.5 py-2.5 bg-white text-zinc-900 placeholder:text-zinc-400 font-extrabold text-sm rounded-lg outline-none border border-zinc-400 focus:border-[#56b2fd] shadow-inner"
         />
-        <select className="bg-white text-zinc-900 font-extrabold text-sm rounded-lg px-3 py-2.5 outline-none border border-zinc-400 cursor-pointer shadow-inner">
-          <option>English</option>
-          <option>German</option>
-          <option>French</option>
-          <option>Spanish</option>
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          className="bg-white text-zinc-900 font-extrabold text-sm rounded-lg px-3 py-2.5 outline-none border border-zinc-400 cursor-pointer shadow-inner"
+        >
+          <option value="English">English</option>
+          <option value="German">German</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="Korean">Korean</option>
         </select>
       </div>
 

@@ -11,6 +11,8 @@ interface RoomLobbyProps {
   myPlayerId: string;
   hostId: string | null;
   messages: ChatMessagePayload[];
+  roomSettings: RoomSettings;
+  onUpdateSettings?: (settings: Partial<RoomSettings>) => void;
   onSendMessage: (msg: string) => void;
   onStartGame: (settings?: RoomSettings) => void;
   onSwitchTeam?: (teamId: TeamId) => void;
@@ -22,6 +24,8 @@ export function RoomLobby({
   myPlayerId,
   hostId,
   messages,
+  roomSettings,
+  onUpdateSettings,
   onSendMessage,
   onStartGame,
   onSwitchTeam,
@@ -29,18 +33,11 @@ export function RoomLobby({
   const isHost = hostId === myPlayerId;
   const canStart = isHost && players.length >= 2;
 
-  const [settings, setSettings] = useState<RoomSettings>({
-    maxPlayers: 8,
-    drawTime: 80,
-    rounds: 3,
-    hints: 2,
-    wordCount: 3,
-    language: "English",
-    gameMode: "Normal",
-    teamCount: 2,
-    customWords: "",
-    customWordsOnly: false,
-  });
+  const handleSettingsChange = (newSettings: RoomSettings) => {
+    if (onUpdateSettings) {
+      onUpdateSettings(newSettings);
+    }
+  };
 
   const handleInvite = (team?: string) => {
     if (typeof window !== "undefined") {
@@ -56,7 +53,7 @@ export function RoomLobby({
   return (
     <div className="w-full max-w-[1100px] flex flex-col gap-1.5 select-none">
       {/* 1. Top Status Header */}
-      <LobbyHeader roomId={roomId} rounds={settings.rounds} />
+      <LobbyHeader roomId={roomId} rounds={roomSettings.rounds} />
 
       {/* 2. 3-Column Lobby Layout */}
       <div className="w-full flex flex-col lg:flex-row items-stretch gap-2 min-h-[540px]">
@@ -73,11 +70,11 @@ export function RoomLobby({
         {/* Center Column: Room Settings & Launch */}
         <div className="flex-1 bg-[#28324a] rounded border border-[#1b2234] p-4 flex flex-col shadow-lg">
           <LobbySettingsForm
-            settings={settings}
-            onChange={setSettings}
+            settings={roomSettings}
+            onChange={handleSettingsChange}
             isHost={isHost}
             canStart={canStart}
-            onStart={() => onStartGame(settings)}
+            onStart={() => onStartGame(roomSettings)}
             onInvite={handleInvite}
           />
         </div>

@@ -46,11 +46,13 @@ export async function startGameInRoom(
 
   // 4. Extract and normalize settings
   const totalRounds = settings?.rounds || room.totalRounds || 3;
-  const drawTime = settings?.drawTime || room.drawTime || 60;
+  const drawTime = settings?.drawTime || room.drawTime || 80;
   const wordCount = settings?.wordCount || room.wordCount || 3;
   const hints = settings?.hints ?? room.hints ?? 2;
-  const customWordsOnly = settings?.customWordsOnly ?? false;
-
+  const language = settings?.language || room.language || "English";
+  const gameMode = settings?.gameMode || room.gameMode || "Normal";
+  const teamCount = settings?.teamCount || room.teamCount || 2;
+  const customWordsOnly = settings?.customWordsOnly ?? room.customWordsOnly ?? false;
 
   // 5. Store Custom Words in Redis Set if provided
   const wordpackKey = `room:${roomId}:wordpack`;
@@ -68,8 +70,7 @@ export async function startGameInRoom(
     }
   }
 
-
-  // 4. Update Redis State
+  // 6. Update Redis State
   const roomKey = `room:${roomId}`;
   await redis.hset(roomKey, {
     status: "choosing",
@@ -78,6 +79,9 @@ export async function startGameInRoom(
     drawTime: drawTime.toString(),
     wordCount: wordCount.toString(),
     hints: hints.toString(),
+    language,
+    gameMode,
+    teamCount: teamCount.toString(),
     customWordsOnly: customWordsOnly ? "true" : "false",
     turnOrder: JSON.stringify(turnOrder),
     turnIndex: "0",

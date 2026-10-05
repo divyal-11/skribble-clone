@@ -99,7 +99,7 @@ export async function executeWordSelection(
   }
 
   const room = await getRoom(cleanRoomId);
-  const duration = Number(room?.drawTime) || 60;
+  const duration = Number(room?.drawTime) || 80;
   const roundEndsAt = Date.now() + duration * 1000;
 
   await redis.hset(`room:${cleanRoomId}`, "roundEndsAt", roundEndsAt.toString());
@@ -304,7 +304,7 @@ function checkProgressiveHints(
 export async function startTurnTimer(
   io: AppServer,
   roomId: string,
-  durationSeconds: number = 60
+  durationSeconds: number = 80
 ): Promise<void> {
   stopTurnTimer(roomId);
   const endsAt = Date.now() + durationSeconds * 1000;

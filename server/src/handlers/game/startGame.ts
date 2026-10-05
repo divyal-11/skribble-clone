@@ -9,6 +9,7 @@ import { getRoomPlayers } from "../../services/playerService.js";
 import { getWordOptionsForRoom } from "../../services/wordService.js";
 import { autoBalanceTeams, getTeamScores } from "../../services/teamService.js";
 import { startWordChoiceTimer } from "../../services/timeServices.js";
+import { getRoom } from "../../services/roomService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -45,9 +46,13 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
     });
     io.to(cleanRoomId).emit("scoreUpdate", { scores: resetScores });
 
+    const room = await getRoom(cleanRoomId);
+    const isTeamMode = (settings?.gameMode || room?.gameMode) === "Team";
+    const teamCount = settings?.teamCount || room?.teamCount || 2;
+
     // If Team mode, ensure all players are assigned to active teams
-    if (settings?.gameMode === "Team") {
-      const balanced = await autoBalanceTeams(cleanRoomId, settings.teamCount || 2);
+    if (isTeamMode) {
+      const balanced = await autoBalanceTeams(cleanRoomId, teamCount);
       balanced.forEach((p) => {
         if (p.teamId) {
           io.to(cleanRoomId).emit("teamUpdated", { playerId: p.id, teamId: p.teamId });
