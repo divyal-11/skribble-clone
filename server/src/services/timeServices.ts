@@ -10,6 +10,8 @@ import { advanceTurnInRoom } from "./turnService.js";
 import { clearRoomStrokes } from "./strokeService.js";
 import { maskWord } from "../lib/words.js";
 import { getWordOptionsForRoom } from "./wordService.js";
+import { redis } from "../lib/redis.js";
+
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -32,11 +34,18 @@ const activeTimers = new Map<string, ActiveTimer>();
 /**
  * Returns remaining seconds on the clock for a room (0 if not running)
  */
-export function getRemainingTime(roomId: string): number {
+export async function getRemainingTime(roomId: string): Promise<number> {
   const timer = activeTimers.get(roomId);
-  if (!timer) return 0;
-  return Math.max(0, Math.round((timer.endsAt - Date.now()) / 1000));
+
+  if (timer) {
+    return Math.max(0, Math.round((timer.endsAt - Date.now()) / 1000));
+  }
+
+  const endsAtRaw = await redis.hget(`room:${roomId}`, "roundEndsAt");
+  if (!endsAtRaw) return 0;
+  return Math.max(0, Math.round((parseInt(endsAtRaw, 10) - Date.now()) / 1000));
 }
+
 
 /**
  * Stops and clears any running timer for a room
@@ -123,6 +132,12 @@ export function startTurnTimer(
   const intervalId = setInterval(async () => {
     const timer = activeTimers.get(roomId);
     if (!timer) return;
+
+    const room = await getRoom(roomId);
+    if (!room || room.status !== "drawing") {
+      stopTurnTimer(roomId);
+      return;
+    }
 
     const remaining = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
     checkProgressiveHints(io, roomId, timer, remaining);

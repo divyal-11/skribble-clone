@@ -14,6 +14,7 @@ import { registerRoomHandlers } from "./handlers/room/index.js";
 import { registerGameHandlers } from "./handlers/game/index.js";
 import { registerDrawHandlers } from "./handlers/draw/index.js";
 import { registerChatHandlers } from "./handlers/chat/index.js";
+import { createAdapter } from "@socket.io/redis-adapter";
 
 dotenv.config();
 
@@ -34,6 +35,16 @@ const io = new Server<
     methods: ["GET", "POST"],
   },
 });
+
+// Connect Redis Pub/Sub adapter for horizontal clustering
+const pubClient = redis.duplicate();
+const subClient = redis.duplicate();
+
+pubClient.on("error", (err) => console.error("Redis PubClient error:", err));
+subClient.on("error", (err) => console.error("Redis SubClient error:", err));
+
+io.adapter(createAdapter(pubClient, subClient));
+
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

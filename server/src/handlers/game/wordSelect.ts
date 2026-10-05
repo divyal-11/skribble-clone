@@ -7,6 +7,7 @@ import {
 import { selectWordInRoom } from "../../services/wordService.js";
 import { startTurnTimer } from "../../services/timeServices.js";
 import { getRoom } from "../../services/roomService.js";
+import { redis } from "../../lib/redis.js";
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -38,6 +39,9 @@ export function handleWordSelect(io: AppServer, socket: AppSocket) {
     const room = await getRoom(cleanRoomId);
     const duration = Number(room?.drawTime) || 60;
     const roundEndsAt = Date.now() + duration * 1000;
+
+    // Persist turn deadline in Redis for cross-instance sync
+    await redis.hset(`room:${cleanRoomId}`, "roundEndsAt", roundEndsAt.toString());
 
     // Send full word to drawer
     socket.emit("wordChosen", {

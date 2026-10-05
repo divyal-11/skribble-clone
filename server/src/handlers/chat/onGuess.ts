@@ -44,13 +44,14 @@ export function handleGuess(io:AppServer,socket:AppSocket){
 
     const players = await getRoomPlayers(cleanRoomId);
     const currentPlayer = players.find((p)=> p.id === playerId);
+
     if(!currentPlayer || currentPlayer.hasGuessed) return;
 
     const isCorrect = cleanText.toLowerCase()=== room.currentWord.toLowerCase();
 
     if(isCorrect){
         //calc points and update redis
-        const remainingSeconds = getRemainingTime(cleanRoomId);
+        const remainingSeconds = await getRemainingTime(cleanRoomId);
         const score = calculateGuessScore(remainingSeconds);
         const {players:updatedPlayers,updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
 
