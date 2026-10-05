@@ -10,7 +10,7 @@ import { getRoomPlayers, resetPlayerGuessed } from "./playerService.js";
 import { advanceTurnInRoom } from "./turnService.js";
 import { clearRoomStrokes } from "./strokeService.js";
 import { maskWord } from "../lib/words.js";
-import { getWordOptionsForRoom } from "./wordService.js";
+import { getWordOptionsForRoom, selectWordInRoom } from "./wordService.js";
 import { getTeamScores } from "./teamService.js";
 import { redis } from "../lib/redis.js";
 
@@ -32,7 +32,14 @@ interface ActiveTimer {
   startScores?: Record<string, number>;
 }
 
+interface ChoiceTimer {
+  timeoutId: NodeJS.Timeout;
+  endsAt: number;
+  drawerId: string;
+}
+
 const activeTimers = new Map<string, ActiveTimer>();
+const activeChoiceTimers = new Map<string, ChoiceTimer>();
 
 /**
  * Returns remaining seconds on the clock for a room (0 if not running)
@@ -49,9 +56,8 @@ export async function getRemainingTime(roomId: string): Promise<number> {
   return Math.max(0, Math.round((parseInt(endsAtRaw, 10) - Date.now()) / 1000));
 }
 
-
 /**
- * Stops and clears any running timer for a room
+ * Stops and clears any running turn timer for a room
  */
 export function stopTurnTimer(roomId: string): void {
   const timer = activeTimers.get(roomId);
@@ -59,6 +65,177 @@ export function stopTurnTimer(roomId: string): void {
     clearInterval(timer.intervalId);
     activeTimers.delete(roomId);
   }
+}
+
+/**
+ * Stops and clears any running word choice timer for a room
+ */
+export function stopWordChoiceTimer(roomId: string): void {
+  const timer = activeChoiceTimers.get(roomId);
+  if (timer) {
+    clearTimeout(timer.timeoutId);
+    activeChoiceTimers.delete(roomId);
+    console.log(`⏱️ Stopped word choice timer for room ${roomId}`);
+  }
+}
+
+/**
+ * Executes server-authoritative word choice (used by both manual selection and auto-pick timeout)
+ */
+export async function executeWordSelection(
+  io: AppServer,
+  roomId: string,
+  drawerId: string,
+  word: string,
+  isAutoPick: boolean = false
+): Promise<boolean> {
+  stopWordChoiceTimer(roomId);
+
+  const cleanRoomId = roomId.trim().toUpperCase();
+  const result = await selectWordInRoom(cleanRoomId, drawerId, word);
+  if (!result.success || !result.maskedWord || !result.word) {
+    console.warn(`⚠️ Word selection failed: ${result.error}`);
+    return false;
+  }
+
+  const room = await getRoom(cleanRoomId);
+  const duration = Number(room?.drawTime) || 60;
+  const roundEndsAt = Date.now() + duration * 1000;
+
+  await redis.hset(`room:${cleanRoomId}`, "roundEndsAt", roundEndsAt.toString());
+  await redis.del(`room:${cleanRoomId}:turnDeltas`);
+
+  const roomSockets = await io.in(cleanRoomId).fetchSockets();
+  const drawerSocket = roomSockets.find((s) => s.data.playerId === drawerId);
+
+  // Broadcast masked word to all players in the room
+  io.to(cleanRoomId).emit("wordChosen", {
+    maskedWord: result.maskedWord,
+    drawerId,
+    roundEndsAt,
+    duration,
+  });
+
+  // Privately send the unmasked secret word to the drawer
+  if (drawerSocket) {
+    drawerSocket.emit("wordChosen", {
+      word: result.word,
+      maskedWord: result.maskedWord,
+      drawerId,
+      roundEndsAt,
+      duration,
+    });
+  }
+
+  const players = await getRoomPlayers(cleanRoomId);
+  const drawer = players.find((p) => p.id === drawerId);
+  if (drawer) {
+    const text = isAutoPick
+      ? `${drawer.name} took too long to pick! A word was auto-selected.`
+      : `${drawer.name} is drawing now!`;
+    io.to(cleanRoomId).emit("chatMessage", {
+      senderId: "system",
+      senderName: "System",
+      text,
+      type: "info",
+    });
+  }
+
+  await startTurnTimer(io, cleanRoomId, duration);
+
+  console.log(
+    `📢 Word choice completed in room ${cleanRoomId} (${isAutoPick ? "AUTO" : "MANUAL"}: "${result.word}", duration: ${duration}s)`
+  );
+  return true;
+}
+
+/**
+ * Starts a 15-second server-authoritative timer for the drawer to pick a word
+ */
+export function startWordChoiceTimer(
+  io: AppServer,
+  roomId: string,
+  drawerId: string,
+  durationSeconds: number = 15
+): void {
+  stopWordChoiceTimer(roomId);
+  const endsAt = Date.now() + durationSeconds * 1000;
+
+  const timeoutId = setTimeout(async () => {
+    activeChoiceTimers.delete(roomId);
+
+    const room = await getRoom(roomId);
+    if (!room || room.status !== "choosing") return;
+
+    // Check if drawer is still connected
+    const players = await getRoomPlayers(roomId);
+    const drawer = players.find((p) => p.id === drawerId);
+
+    if (!drawer || !drawer.connected) {
+      console.log(
+        `⏱️ Word choice timer expired, but drawer ${drawerId} is disconnected/absent. Advancing turn.`
+      );
+      await transitionToNextTurn(io, roomId);
+      return;
+    }
+
+    const wordOptions = await getWordOptionsForRoom(roomId, room.wordCount || 3);
+    const pickedWord =
+      wordOptions[Math.floor(Math.random() * wordOptions.length)] || "star";
+
+    console.log(
+      `⏱️ Word choice deadline passed in room ${roomId}. Auto-selecting "${pickedWord}" for ${drawer.name}`
+    );
+    await executeWordSelection(io, roomId, drawerId, pickedWord, true);
+  }, durationSeconds * 1000);
+
+  activeChoiceTimers.set(roomId, { timeoutId, endsAt, drawerId });
+  console.log(
+    `⏱️ Word choice timer started for drawer ${drawerId} in room ${roomId}: ${durationSeconds}s`
+  );
+}
+
+/**
+ * Resets a game to waiting lobby when connected players drop below 2
+ */
+export async function pauseRoomDueToInsufficientPlayers(
+  io: AppServer,
+  roomId: string,
+  reason: string = "Not enough players to continue"
+): Promise<void> {
+  const roomKey = `room:${roomId}`;
+  const room = await getRoom(roomId);
+  if (!room || room.status === "waiting") return;
+
+  console.log(`⏸️ Room ${roomId} paused: ${reason}`);
+
+  stopTurnTimer(roomId);
+  stopWordChoiceTimer(roomId);
+
+  await redis.hset(roomKey, {
+    status: "waiting",
+    currentDrawerId: "",
+    currentWord: "",
+  });
+
+  await clearRoomStrokes(roomId);
+  io.to(roomId).emit("drawData", { type: "clear", x: 0, y: 0 });
+
+  io.to(roomId).emit("roomPaused", { reason });
+  io.to(roomId).emit("chatMessage", {
+    senderId: "system",
+    senderName: "System",
+    text: `Game paused: ${reason}. Waiting for players to join...`,
+    type: "system",
+  });
+
+  const players = await getRoomPlayers(roomId);
+  io.to(roomId).emit("joinedRoom", {
+    roomId,
+    players,
+    status: "waiting",
+    hostId: room.hostId,
+  });
 }
 
 
@@ -213,7 +390,7 @@ async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void
   const players = await getRoomPlayers(roomId);
   const nextDrawer = players.find((p) => p.id === nextTurn.currentDrawerId);
 
-  if (nextDrawer) {
+  if (nextDrawer && nextDrawer.connected) {
     io.to(roomId).emit("choosingWord", {
       drawerId: nextDrawer.id,
       drawerName: nextDrawer.name,
@@ -225,9 +402,22 @@ async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void
     const drawerSocket = roomSockets.find((s) => s.data.playerId === nextTurn.currentDrawerId);
     drawerSocket?.emit("chooseWord", { options: wordOptions });
 
+    // Start 15-second server-authoritative word choice timer
+    startWordChoiceTimer(io, roomId, nextDrawer.id, 15);
+
     console.log(
       `🎨 Next turn in ${roomId}: ${nextDrawer.name} (Round ${nextTurn.currentRound}/${nextTurn.totalRounds})`
     );
+  } else {
+    console.warn(
+      `⚠️ Next drawer ${nextTurn.currentDrawerId} unavailable in room ${roomId}. Advancing turn.`
+    );
+    const connected = players.filter((p) => p.connected);
+    if (connected.length < 2) {
+      await pauseRoomDueToInsufficientPlayers(io, roomId);
+    } else {
+      await transitionToNextTurn(io, roomId);
+    }
   }
 }
 
@@ -236,11 +426,13 @@ async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void
  */
 export async function handleTurnEnd(
   io: AppServer,
-  roomId: string
+  roomId: string,
+  reasonOverride?: string
 ): Promise<void> {
   const timer = activeTimers.get(roomId);
   const startScores = timer?.startScores || {};
   stopTurnTimer(roomId);
+  stopWordChoiceTimer(roomId);
 
   const room = await getRoom(roomId);
   const players = await getRoomPlayers(roomId);
@@ -268,11 +460,15 @@ export async function handleTurnEnd(
 
   const nonDrawers = players.filter((p) => p.id !== room?.currentDrawerId);
   const guessedCount = nonDrawers.filter((p) => p.hasGuessed).length;
-  let reason = "Time's up!";
-  if (nonDrawers.length > 0 && guessedCount === nonDrawers.length) {
-    reason = "Everyone guessed the word!";
-  } else if (guessedCount === 0) {
-    reason = "Nobody guessed the word!";
+  let reason = reasonOverride;
+  if (!reason) {
+    if (nonDrawers.length > 0 && guessedCount === nonDrawers.length) {
+      reason = "Everyone guessed the word!";
+    } else if (guessedCount === 0) {
+      reason = "Nobody guessed the word!";
+    } else {
+      reason = "Time's up!";
+    }
   }
 
   io.to(roomId).emit("turnEnded", {

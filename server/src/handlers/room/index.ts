@@ -24,7 +24,7 @@ type AppSocket = Socket<
 
 export function registerRoomHandlers(io: AppServer, socket: AppSocket) {
   handleJoinRoom(socket);
-  handleLeaveRoom(socket);
-  handleDisconnect(socket);
+  handleLeaveRoom(io, socket);
+  handleDisconnect(io, socket);
   handleSwitchTeam(io, socket);
 }

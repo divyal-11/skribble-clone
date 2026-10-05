@@ -271,8 +271,21 @@ export function useGameSocket() {
       setTeamScores(data.scores);
     };
 
+    const onRoomPaused = (data: { reason: string }) => {
+      setRoomStatus("waiting");
+      setCurrentDrawerId(null);
+      setChoosingDrawerName(null);
+      setCurrentWord(undefined);
+      setMaskedWord("");
+      setRevealedWord(null);
+      setWordOptions([]);
+      setRoundEndsAt(null);
+      showNotification(`Game Paused: ${data.reason}`, "leave");
+    };
+
     socket.on("teamUpdated", onTeamUpdated);
     socket.on("teamScoresUpdate", onTeamScoresUpdate);
+    socket.on("roomPaused", onRoomPaused);
 
     return () => {
       socket.off("connect", onConnect);
@@ -292,6 +305,7 @@ export function useGameSocket() {
       socket.off("gameEnded", onGameEnded);
       socket.off("teamUpdated", onTeamUpdated);
       socket.off("teamScoresUpdate", onTeamScoresUpdate);
+      socket.off("roomPaused", onRoomPaused);
     };
   }, []);
 

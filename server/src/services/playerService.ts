@@ -137,14 +137,31 @@ export async function updatePlayerScore(
 
 
 // resets hasguessed to false for  all players in the room for the new round
-export async function resetPlayerGuessed(roomId:string):Promise<Player[]>{
+export async function resetPlayerGuessed(roomId: string): Promise<Player[]> {
   const players = await getRoomPlayers(roomId);
   const playerskey = `room:${roomId}:players`;
 
-  for(const player of players){
+  for (const player of players) {
     player.hasGuessed = false;
-    await redis.hset(playerskey,player.id,JSON.stringify(player));
+    await redis.hset(playerskey, player.id, JSON.stringify(player));
   }
   return players;
+}
+
+// Resets score to 0 and hasGuessed to false for all players when a new match/restart starts
+export async function resetAllPlayerScores(roomId: string): Promise<Player[]> {
+  const players = await getRoomPlayers(roomId);
+  const playersKey = `room:${roomId}:players`;
+  const updated: Player[] = [];
+
+  for (const player of players) {
+    player.score = 0;
+    player.hasGuessed = false;
+    await redis.hset(playersKey, player.id, JSON.stringify(player));
+    updated.push(player);
+  }
+
+  await redis.expire(playersKey, ROOM_TTL);
+  return updated;
 }
 

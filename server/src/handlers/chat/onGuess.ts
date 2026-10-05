@@ -97,12 +97,15 @@ export function handleGuess(io:AppServer,socket:AppSocket){
           io.to(cleanRoomId).emit("teamScoresUpdate", { scores: teamScores });
         }
 
-        //if all non drawer have gusssed , end the turn early
-        const guessers = updatedPlayers.filter((p)=>p.id !== room.currentDrawerId);
-        const allGuessed = guessers.length > 0 && guessers.every((p)=> p.hasGuessed);
+        // If all connected non-drawers have guessed, end the turn early
+        const guessers = updatedPlayers.filter(
+          (p) => p.id !== room.currentDrawerId && p.connected
+        );
+        const allGuessed =
+          guessers.length > 0 && guessers.every((p) => p.hasGuessed);
 
-        if(allGuessed){
-            await triggerTurnEndEarly(io,cleanRoomId);
+        if (allGuessed) {
+          await triggerTurnEndEarly(io, cleanRoomId);
         }
     }else {
         //check if close typo and privately notify guesser

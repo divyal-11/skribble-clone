@@ -8,6 +8,7 @@ import { startGameInRoom } from "../../services/turnService.js";
 import { getRoomPlayers } from "../../services/playerService.js";
 import { getWordOptionsForRoom } from "../../services/wordService.js";
 import { autoBalanceTeams, getTeamScores } from "../../services/teamService.js";
+import { startWordChoiceTimer } from "../../services/timeServices.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -35,6 +36,15 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
       return;
     }
 
+    const players = await getRoomPlayers(cleanRoomId);
+
+    // Immediately broadcast 0 scores so UI reflects clean state for new game / Play Again
+    const resetScores: Record<string, number> = {};
+    players.forEach((p) => {
+      resetScores[p.id] = 0;
+    });
+    io.to(cleanRoomId).emit("scoreUpdate", { scores: resetScores });
+
     // If Team mode, ensure all players are assigned to active teams
     if (settings?.gameMode === "Team") {
       const balanced = await autoBalanceTeams(cleanRoomId, settings.teamCount || 2);
@@ -47,7 +57,6 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
       io.to(cleanRoomId).emit("teamScoresUpdate", { scores: teamScores });
     }
 
-    const players = await getRoomPlayers(cleanRoomId);
     const drawer = players.find((p) => p.id === result.currentDrawerId);
 
     // Broadcast game start to room
@@ -62,6 +71,9 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
         drawerId: drawer.id,
         drawerName: drawer.name,
       });
+
+      // Start 15-second server-authoritative word choice timer
+      startWordChoiceTimer(io, cleanRoomId, drawer.id, 15);
     }
 
     // Dynamic word options from custom wordpack / count
