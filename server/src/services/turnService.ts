@@ -113,7 +113,7 @@ export async function advanceTurnInRoom(roomId:string):Promise <{
 
   //check is all rounds are complete
   if(currentRound > totalRounds){
-    await redis.hset(roomKey, "status", "finished");
+    await redis.hset(roomKey, "status", "gameEnd");
 
     return { 
       gameOver: true, 

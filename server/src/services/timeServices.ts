@@ -150,7 +150,6 @@ export async function startTurnTimer(
     checkProgressiveHints(io, roomId, timer, remaining);
 
     if (remaining <= 0) {
-      stopTurnTimer(roomId);
       await handleTurnEnd(io, roomId);
     }
   }, 1000);
@@ -176,7 +175,6 @@ export async function triggerTurnEndEarly(
   roomId: string
 ): Promise<void> {
   console.log(`⚡ All players guessed in ${roomId}! Triggering early turn end.`);
-  stopTurnTimer(roomId);
   await handleTurnEnd(io, roomId);
 }
 
@@ -188,11 +186,12 @@ async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void
   const nextTurn = await advanceTurnInRoom(roomId);
 
   if (nextTurn.gameOver) {
+    await redis.hset(`room:${roomId}`, "status", "gameEnd");
     const finalPlayers = await getRoomPlayers(roomId);
     const finalScores: Record<string, number> = {};
     finalPlayers.forEach((p) => { finalScores[p.id] = p.score; });
     io.to(roomId).emit("gameEnded", { finalScores });
-    console.log(`🏆 Game ended in room ${roomId}!`);
+    console.log(`🏆 Game ended in room ${roomId}! Final scores:`, finalScores);
     return;
   }
 
@@ -231,14 +230,22 @@ export async function handleTurnEnd(
   const room = await getRoom(roomId);
   const players = await getRoomPlayers(roomId);
 
-  const scores: Record<string, number> = {};
+  // Read recorded turn deltas from Redis
+  const rawDeltas = await redis.hgetall(`room:${roomId}:turnDeltas`);
   const scoreDeltas: Record<string, number> = {};
+  for (const [pId, val] of Object.entries(rawDeltas || {})) {
+    const pts = parseInt(val, 10);
+    if (pts > 0) scoreDeltas[pId] = pts;
+  }
 
+  const scores: Record<string, number> = {};
   players.forEach((p) => {
     scores[p.id] = p.score;
-    const delta = p.score - (startScores[p.id] ?? p.score);
-    if (delta > 0) {
-      scoreDeltas[p.id] = delta;
+    if (!scoreDeltas[p.id]) {
+      const delta = p.score - (startScores[p.id] ?? p.score);
+      if (delta > 0) {
+        scoreDeltas[p.id] = delta;
+      }
     }
   });
 

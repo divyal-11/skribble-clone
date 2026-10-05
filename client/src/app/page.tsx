@@ -90,7 +90,8 @@ export default function Home() {
 
   const myPlayerId = typeof window !== "undefined" ? getPlayerId() : "";
   const isDrawer = currentDrawerId === myPlayerId;
-  const isGameActive = roomStatus !== "waiting";
+  const isGameOver = roomStatus === "gameEnd" || roomStatus === "finished";
+  const isGameActive = roomStatus !== "waiting" && !isGameOver;
 
   return (
 <main className="min-h-screen flex flex-col items-center justify-center p-6 text-white font-sans">
@@ -99,8 +100,6 @@ export default function Home() {
       </div>
 
       {notification && <Toast notification={notification} />}
-
-      
 
       {!currentRoom ? (
         <JoinRoomCard
@@ -114,16 +113,42 @@ export default function Home() {
           inviteRoomCode={inviteRoomCode}
           onClearInvite={handleClearInvite}
         />
-      ) : roomStatus === "gameEnd" ? (
-        /* 🏆 1. Game Over Podium Screen */
-        <GamePodium
-          players={players}
-          finalScores={finalScores}
-          teamScores={teamScores}
-          isHost={myPlayerId === hostId}
-          onPlayAgain={startGame}
-          onLeaveRoom={leaveRoom}
-        />
+      ) : isGameOver ? (
+        /* 🏆 1. Game Over Podium Screen (Seamless inside 3-column in-game view) */
+        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+          {/* 1. Final In-Game Scoreboard (Left) */}
+          <div className="lg:col-span-3 order-2 lg:order-1 w-full">
+            <InGameScoreboard
+              players={players}
+              myPlayerId={myPlayerId}
+              hostId={hostId}
+              currentDrawerId={null}
+              teamScores={teamScores}
+            />
+          </div>
+
+          {/* 2. Podium (Center) */}
+          <div className="lg:col-span-6 xl:col-span-6 order-1 lg:order-2 w-full">
+            <GamePodium
+              players={players}
+              finalScores={finalScores}
+              teamScores={teamScores}
+              isHost={myPlayerId === hostId}
+              onPlayAgain={startGame}
+              onLeaveRoom={leaveRoom}
+            />
+          </div>
+
+          {/* 3. Live Chat (Right) */}
+          <div className="lg:col-span-3 xl:col-span-3 order-3 w-full h-full min-h-[450px]">
+            <ChatBox
+              messages={messages}
+              onSendMessage={sendGuess}
+              isDrawer={false}
+              hasGuessed={false}
+            />
+          </div>
+        </div>
       ) : isGameActive ? (
         <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
           {/* 1. In-Game Live Scoreboard (Left column) */}

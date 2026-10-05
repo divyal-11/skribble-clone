@@ -43,6 +43,7 @@ export function handleWordSelect(io: AppServer, socket: AppSocket) {
 
     // Persist turn deadline in Redis for cross-instance sync
     await redis.hset(`room:${cleanRoomId}`, "roundEndsAt", roundEndsAt.toString());
+    await redis.del(`room:${cleanRoomId}:turnDeltas`);
 
     // Send full word to drawer
     socket.emit("wordChosen", {

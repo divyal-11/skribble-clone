@@ -9,9 +9,9 @@ interface BucketState {
 }
 
 const LIMITS: Record<string, BucketConfig> = {
-  draw: { capacity: 50, refillRate: 40 },         // ~40-50 strokes/sec burst
-  guess: { capacity: 3, refillRate: 2 },          // ~2-3 guesses/sec
-  clearCanvas: { capacity: 2, refillRate: 1 },    // ~1 clear/sec
+  draw: { capacity: 500, refillRate: 350 },       // Smooth continuous strokes up to 350-500 events/sec
+  guess: { capacity: 5, refillRate: 3 },          // ~3-5 guesses/sec
+  clearCanvas: { capacity: 5, refillRate: 2 },    // ~2 clears/sec
 };
 
 // socketId -> eventName -> BucketState

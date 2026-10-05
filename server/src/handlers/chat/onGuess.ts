@@ -10,6 +10,7 @@ import { isCloseGuess, calculateGuessScore } from "../../services/chatService.js
 import { getRemainingTime, triggerTurnEndEarly } from "../../services/timeServices.js";
 import { checkRateLimit } from "../../services/rateLimiterService.js";
 import { getTeamScores } from "../../services/teamService.js";
+import { redis } from "../../lib/redis.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -55,12 +56,16 @@ export function handleGuess(io:AppServer,socket:AppSocket){
         const score = calculateGuessScore(remainingSeconds);
         const {players:updatedPlayers,updatedScores} = await updatePlayerScore(cleanRoomId, playerId, score);
 
+        // Record point delta for this turn
+        await redis.hincrby(`room:${cleanRoomId}:turnDeltas`, playerId, score);
+
         // Skribbl drawer bonus: drawer receives 25% of guesser's score
         if (room.currentDrawerId && room.currentDrawerId !== playerId) {
           const drawerBonus = Math.round(score * 0.25);
           if (drawerBonus > 0) {
             const { updatedScores: withDrawerScores } = await updatePlayerScore(cleanRoomId, room.currentDrawerId, drawerBonus);
             Object.assign(updatedScores, withDrawerScores);
+            await redis.hincrby(`room:${cleanRoomId}:turnDeltas`, room.currentDrawerId, drawerBonus);
           }
         }
 
@@ -71,11 +76,11 @@ export function handleGuess(io:AppServer,socket:AppSocket){
           word: room.currentWord,
         });
 
-        //announce to room without revealing the secret word
+        //announce to room with points earned
         io.to(cleanRoomId).emit("chatMessage",{
             senderId: playerId,
             senderName: currentPlayer.name,
-            text: `${currentPlayer.name} guessed the word!`,
+            text: `${currentPlayer.name} guessed the word! (+${score} points)`,
             type: "correct",
         });
         
