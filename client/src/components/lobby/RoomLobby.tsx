@@ -12,7 +12,7 @@ interface RoomLobbyProps {
   hostId: string | null;
   messages: ChatMessagePayload[];
   onSendMessage: (msg: string) => void;
-  onStartGame: () => void;
+  onStartGame: (settings?: RoomSettings) => void;
 }
 
 export function RoomLobby({
@@ -70,7 +70,7 @@ export function RoomLobby({
             onChange={setSettings}
             isHost={isHost}
             canStart={canStart}
-            onStart={onStartGame}
+            onStart={() => onStartGame(settings)}
             onInvite={handleInvite}
           />
         </div>

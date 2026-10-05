@@ -6,6 +6,7 @@ import {
 } from "../../types/events.js";
 import { selectWordInRoom } from "../../services/wordService.js";
 import { startTurnTimer } from "../../services/timeServices.js";
+import { getRoom } from "../../services/roomService.js";
 
 type AppSocket = Socket<
   ClientToServerEvents,
@@ -34,7 +35,8 @@ export function handleWordSelect(io: AppServer, socket: AppSocket) {
       return;
     }
 
-    const duration = 60;
+    const room = await getRoom(cleanRoomId);
+    const duration = Number(room?.drawTime) || 60;
     const roundEndsAt = Date.now() + duration * 1000;
 
     // Send full word to drawer

@@ -6,7 +6,7 @@ import {
 } from "../../types/events.js";
 import { startGameInRoom } from "../../services/turnService.js";
 import { getRoomPlayers } from "../../services/playerService.js";
-import { getRandomWords } from "../../lib/words.js";
+import { getWordOptionsForRoom } from "../../services/wordService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -51,8 +51,11 @@ export function handleStartGame(io: AppServer, socket: AppSocket) {
       });
     }
 
-    // 3 random words sent privately to drawer
-    const wordOptions = getRandomWords(3);
+    // Dynamic word options from custom wordpack / count
+    const wordOptions = await getWordOptionsForRoom(
+      cleanRoomId,
+      result.wordCount || 3
+    );
     const roomSockets = await io.in(cleanRoomId).fetchSockets();
     const drawerSocket = roomSockets.find(
       (s) => s.data.playerId === result.currentDrawerId

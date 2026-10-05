@@ -1,19 +1,23 @@
 import { redis } from "../lib/redis.js";
 import { getRoom, ROOM_TTL } from "./roomService.js";
 import { getRoomPlayers } from "./playerService.js";
+import { RoomSettings } from "../types/events.js";
 
 /**
  * Starts a game: validates host, shuffles turn order, and updates Redis
  */
 export async function startGameInRoom(
   roomId: string,
-  hostId: string
+  hostId: string,
+  settings?: RoomSettings,
 ): Promise<{
   success: boolean;
   error?: string;
   turnOrder?: string[];
   currentDrawerId?: string;
   totalRounds?: number;
+  drawTime?: number;
+  wordCount?: number;
 }> {
   const room = await getRoom(roomId);
   if (!room) {
@@ -35,11 +39,41 @@ export async function startGameInRoom(
   const turnOrder = players.map((p) => p.id).sort(() => 0.5 - Math.random());
   const currentDrawerId = turnOrder[0];
 
+  // 4. Extract and normalize settings
+  const totalRounds = settings?.rounds || room.totalRounds || 3;
+  const drawTime = settings?.drawTime || room.drawTime || 60;
+  const wordCount = settings?.wordCount || room.wordCount || 3;
+  const hints = settings?.hints ?? room.hints ?? 2;
+  const customWordsOnly = settings?.customWordsOnly ?? false;
+
+
+  // 5. Store Custom Words in Redis Set if provided
+  const wordpackKey = `room:${roomId}:wordpack`;
+  await redis.del(wordpackKey);
+
+  if (settings?.customWords && settings.customWords.trim().length > 0) {
+    const parsedWords = settings.customWords
+      .split(",")
+      .map((w) => w.trim().toLowerCase())
+      .filter((w) => w.length >= 1 && w.length <= 32);
+    if (parsedWords.length > 0) {
+      await redis.sadd(wordpackKey, ...parsedWords);
+      await redis.expire(wordpackKey, ROOM_TTL);
+      console.log(`📦 Loaded ${parsedWords.length} custom words for room ${roomId}`);
+    }
+  }
+
+
   // 4. Update Redis State
   const roomKey = `room:${roomId}`;
   await redis.hset(roomKey, {
     status: "choosing",
     currentRound: "1",
+    totalRounds: totalRounds.toString(),
+    drawTime: drawTime.toString(),
+    wordCount: wordCount.toString(),
+    hints: hints.toString(),
+    customWordsOnly: customWordsOnly ? "true" : "false",
     turnOrder: JSON.stringify(turnOrder),
     turnIndex: "0",
     currentDrawerId: currentDrawerId,
@@ -50,7 +84,9 @@ export async function startGameInRoom(
     success: true,
     turnOrder,
     currentDrawerId,
-    totalRounds: room.totalRounds,
+    totalRounds,
+    drawTime,
+    wordCount,
   };
 }
 

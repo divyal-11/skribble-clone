@@ -2,6 +2,7 @@ import { redis } from "../lib/redis.js";
 import { Player } from "../types/events.js";
 import { getRoom, RoomMeta, ROOM_TTL } from "./roomService.js";
 
+
 export async function getRoomPlayers(roomId: string): Promise<Player[]> {
   const playersRaw = await redis.hgetall(`room:${roomId}:players`);
   if (!playersRaw) return [];
@@ -18,18 +19,27 @@ export async function addPlayerToRoom(
   let room = await getRoom(roomId);
 
   if (!room) {
-    room = {
+    const newRoom:RoomMeta = {
       hostId: player.id,
       status: "waiting",
       currentRound: 1,
       totalRounds: 3,
+      drawTime: 60,
+      wordCount: 3,
+      hints: 2,
+      customWordsOnly: false,
     };
     await redis.hset(roomKey, {
-      hostId: room.hostId,
-      status: room.status,
-      currentRound: room.currentRound.toString(),
-      totalRounds: room.totalRounds.toString(),
+      hostId: newRoom.hostId,
+      status: newRoom.status,
+      currentRound: newRoom.currentRound.toString(),
+      totalRounds: newRoom.totalRounds.toString(),
+      drawTime: newRoom.drawTime.toString(),
+      wordCount: newRoom.wordCount.toString(),
+      hints: newRoom.hints.toString(),
+      customWordsOnly: "false",
     });
+    room = newRoom;
   }
   
   //check if player already exists in the room(reconnection)

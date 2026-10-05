@@ -27,7 +27,7 @@ export interface ChatMessagePayload {
 export interface ClientToServerEvents {
   joinRoom: (payload: { roomId: string; playerName: string }) => void;
   leaveRoom: (payload: { roomId: string }) => void;
-  startGame: (payload: { roomId: string }) => void;
+  startGame: (payload: { roomId: string; settings?: RoomSettings }) => void;
   wordSelect: (payload: { roomId: string; word: string }) => void;
   draw: (payload: { roomId: string } & DrawStroke) => void;
   clearCanvas: (payload: { roomId: string }) => void;

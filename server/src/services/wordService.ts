@@ -1,6 +1,30 @@
 import { redis } from "../lib/redis.js";
 import { getRoom, ROOM_TTL } from "./roomService.js";
-import { maskWord } from "../lib/words.js";
+import { getRandomWords,maskWord } from "../lib/words.js";
+
+
+//retrieves count word options for the room respecting custom words and custom words only settings.
+export async function getWordOptionsForRoom(
+  roomId: string,
+  count: number = 3
+): Promise<string[]> {
+  const room = await getRoom(roomId);
+  const wordpackKey = `room:${roomId}:wordpack`;
+  const customWords = await redis.smembers(wordpackKey);
+
+  if (customWords.length > 0) {
+    if (room?.customWordsOnly) {
+      const shuffled = [...customWords].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    }
+    // Combined pool
+    const defaultWords = getRandomWords(count);
+    const combined = Array.from(new Set([...customWords, ...defaultWords]));
+    const shuffled = combined.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+  return getRandomWords(count);
+}
 
 /**
  * Validates active drawer and transitions room to 'drawing'

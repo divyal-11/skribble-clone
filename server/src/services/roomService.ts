@@ -7,6 +7,10 @@ export interface RoomMeta {
   status: "waiting" | "choosing" | "drawing" | "roundEnd" | "gameEnd";
   currentRound: number;
   totalRounds: number;
+  drawTime: number;
+  wordCount: number;
+  hints: number;
+  customWordsOnly: boolean;
   turnOrder?: string[];
   currentDrawerId?: string;
   currentWord?: string;
@@ -30,6 +34,10 @@ export async function getRoom(roomId: string): Promise<RoomMeta | null> {
     status: data.status as RoomMeta["status"],
     currentRound: parseInt(data.currentRound || "1", 10),
     totalRounds: parseInt(data.totalRounds || "3", 10),
+    drawTime: parseInt(data.drawTime || "60", 10),
+    wordCount: parseInt(data.wordCount || "3", 10),
+    hints: parseInt(data.hints || "2", 10),
+    customWordsOnly: data.customWordsOnly === "true",
     turnOrder: data.turnOrder ? JSON.parse(data.turnOrder) : undefined,
     currentDrawerId: data.currentDrawerId || undefined,
     currentWord: data.currentWord || undefined,

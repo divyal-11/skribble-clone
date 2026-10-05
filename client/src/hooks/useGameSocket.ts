@@ -1,6 +1,6 @@
 "use client";
 
-import { Player, ChatMessagePayload } from "@/types/events";
+import { Player, ChatMessagePayload, RoomSettings } from "@/types/events";
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
 import { NotificationData } from "@/components/modals/Toast";
@@ -274,9 +274,9 @@ export function useGameSocket() {
     }
   };
 
-  const startGame = () => {
+  const startGame = (settings?: RoomSettings) => {
     if (currentRoom) {
-      socket.emit("startGame", { roomId: currentRoom });
+      socket.emit("startGame", { roomId: currentRoom, settings });
     }
   };
 

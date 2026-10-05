@@ -8,7 +8,8 @@ import { getRoom } from "./roomService.js";
 import { getRoomPlayers, resetPlayerGuessed } from "./playerService.js";
 import { advanceTurnInRoom } from "./turnService.js";
 import { clearRoomStrokes } from "./strokeService.js";
-import { getRandomWords, maskWord } from "../lib/words.js";
+import { maskWord } from "../lib/words.js";
+import { getWordOptionsForRoom } from "./wordService.js";
 
 type AppServer = Server<
   ClientToServerEvents,
@@ -181,7 +182,8 @@ async function transitionToNextTurn(io: AppServer, roomId: string): Promise<void
       drawerName: nextDrawer.name,
     });
 
-    const wordOptions = getRandomWords(3);
+    const room = await getRoom(roomId);
+    const wordOptions = await getWordOptionsForRoom(roomId, room?.wordCount || 3);
     const roomSockets = await io.in(roomId).fetchSockets();
     const drawerSocket = roomSockets.find((s) => s.data.playerId === nextTurn.currentDrawerId);
     drawerSocket?.emit("chooseWord", { options: wordOptions });
