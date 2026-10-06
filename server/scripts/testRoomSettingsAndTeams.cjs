@@ -19,12 +19,12 @@ async function runTest() {
   await new Promise((r) => setTimeout(r, 600));
 
   const hostPlayer = hostData?.players.find((p) => p.name === "HostPlayer");
-  console.log("Host player team:", hostPlayer?.teamId);
-  if (hostPlayer?.teamId !== "blue") {
-    console.error("❌ Host should be on blue team! Found:", hostPlayer?.teamId);
+  console.log("Host player team in Normal mode:", hostPlayer?.teamId);
+  if (hostPlayer?.teamId) {
+    console.error("❌ Host should NOT have a team in Normal mode! Found:", hostPlayer?.teamId);
     process.exit(1);
   }
-  console.log("✅ Host assigned to blue team!");
+  console.log("✅ Host is unassigned in Normal mode!");
 
   console.log("2. GreenPlayer joining with team=green link...");
   let greenData = null;
@@ -43,7 +43,11 @@ async function runTest() {
 
   console.log("3. Host updating lobby settings to drawTime: 80, language: German, gameMode: Team...");
   let updatedSettings = null;
+  let hostTeamOnSwitch = null;
   greenSocket.on("roomSettingsUpdated", (d) => { updatedSettings = d.settings; });
+  hostSocket.on("teamUpdated", (d) => {
+    if (d.playerId === "host-1") hostTeamOnSwitch = d.teamId;
+  });
 
   hostSocket.emit("updateRoomSettings", {
     roomId: ROOM,
@@ -56,7 +60,7 @@ async function runTest() {
     },
   });
 
-  await new Promise((r) => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, 800));
 
   console.log("Updated settings received by client:", updatedSettings);
   if (updatedSettings?.drawTime !== 80 || updatedSettings?.language !== "German") {
@@ -64,6 +68,11 @@ async function runTest() {
     process.exit(1);
   }
   console.log("✅ Lobby settings successfully synced to all players in real-time!");
+  if (hostTeamOnSwitch !== "blue") {
+    console.error("❌ Host should be assigned to blue team upon switching to Team mode! Found:", hostTeamOnSwitch);
+    process.exit(1);
+  }
+  console.log("✅ Host assigned to blue team upon switching to Team mode!");
 
   console.log("4. Starting game in Team mode...");
   let wordOptionsReceived = null;

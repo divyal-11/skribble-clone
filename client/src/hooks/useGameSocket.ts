@@ -309,15 +309,21 @@ export function useGameSocket() {
       }
     };
 
+    const onPlayerListUpdate = (data: { players: Player[] }) => {
+      setPlayers(data.players);
+    };
+
     socket.on("roomSettingsUpdated", onRoomSettingsUpdated);
     socket.on("teamUpdated", onTeamUpdated);
     socket.on("teamScoresUpdate", onTeamScoresUpdate);
     socket.on("roomPaused", onRoomPaused);
+    socket.on("playerListUpdate", onPlayerListUpdate);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("joinedRoom", onJoinedRoom);
+      socket.off("playerListUpdate", onPlayerListUpdate);
       socket.off("roomSettingsUpdated", onRoomSettingsUpdated);
       socket.off("playerJoined", onPlayerJoined);
       socket.off("playerLeft", onPlayerLeft);

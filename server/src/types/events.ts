@@ -100,6 +100,7 @@ export interface ServerToClientEvents {
   teamUpdated: (payload: { playerId: string; teamId: TeamId }) => void;
   teamScoresUpdate: (payload: { scores: Record<string, number> }) => void;
   roomPaused: (payload: { reason: string }) => void;
+  playerListUpdate: (payload: { players: Player[] }) => void;
 }
 
 // Data attached to each socket instance
