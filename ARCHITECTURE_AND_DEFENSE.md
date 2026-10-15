@@ -47,6 +47,8 @@ In your actual project, exactly three processes run:
 
 ## 3. The Exact Code Architecture & Flow Diagram
 
+![Doodl.io System Architecture & Real-Time Flow](./docs/doodl_architecture_flowchart.jpg)
+
 Here is the exact data flow matching the files in your project:
 
 ```mermaid
